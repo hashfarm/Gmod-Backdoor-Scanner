@@ -7,5 +7,5 @@ std::string LuaCheckDefs[] = { "Code Execution (RunString)", "Code Execution (Co
 std::string VMTRegexPatterns[] = { "[0-9]{2,3},", "[0-9]{2,3}\\\\", "\\\\[xX][0-9a-fA-F]+", "RunString", "CompileString", "timer.Simple", "http.Fetch", "http.Post" };
 std::string VMTRegexDefs[] = { "CharCode", "CharCode", "Obfuscated Code [Hex]","Code Execution (RunString)", "Code Execution (CompileString)", "Timer", "http.Fetch", "http.Post" };
 
-std::string VTFRegexPatterns[] = { "[0-9]{2,3},", "RunString", "CompileString", "timer.Simple", "http.Fetch", "http.Post" };
-std::string VTFRegexDefs[] = { "CharCode", "Code Execution (RunString)", "Code Execution (CompileString)", "Timer", "http.Fetch", "http.Post" };
+std::string VTFRegexPatterns[] = {"RunString", "CompileString", "timer.Simple", "http.Fetch", "http.Post" };
+std::string VTFRegexDefs[] = {"Code Execution (RunString)", "Code Execution (CompileString)", "Timer", "http.Fetch", "http.Post" };
