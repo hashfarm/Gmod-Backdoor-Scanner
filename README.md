@@ -14,7 +14,7 @@ Features
 ---
 * Basic backdoor scanning
   * RunString, Http, Etc.
-* VMT/VTF Scanning
-  * Finds malicious VMT/VTF files (Charcode, Runstring, Etc.)
+* VMT/VTF/TTF Scanning
+  * Finds malicious VMT/VTF/TTF files (Charcode, Runstring, Etc.)
   * Decodes CharCode (97,98,99 -> abc)
    
