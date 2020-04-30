@@ -19,8 +19,9 @@ void CheckLine(std::string Line, int LineNum, std::string FilePath, std::string 
 
             if (number_of_matches > 0) {
                 std::cout << FilePath << " | " << LuaCheckDefs[DefVal] << " @ Line #" << LineNum << " | " << trimExtraWhiteSpaces(Line) << std::endl;
+                std::cout << std::endl;
             }
-            std::cout << std::endl;
+            
             DefVal++;
         }
     }
@@ -44,8 +45,8 @@ void CheckLine(std::string Line, int LineNum, std::string FilePath, std::string 
                     }
                     std::cout << std::endl;
                 }
+                std::cout << std::endl;
             }
-            std::cout << std::endl;
             DefVal++;
         }
        
