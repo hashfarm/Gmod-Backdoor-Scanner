@@ -77,13 +77,39 @@ void CheckLine(std::string Line, int LineNum, std::string FilePath, std::string 
         }
 
     }
+
+    if (FileType == ".ttf") {
+        for (std::string RegexPattern : TTFRegexPatterns) {
+            std::regex CheckRegex(RegexPattern); // Convert to actual regex
+
+            std::ptrdiff_t number_of_matches = std::distance(std::sregex_iterator(Line.begin(), Line.end(), CheckRegex), std::sregex_iterator());
+
+            if (number_of_matches > 0) {
+                std::cout << FilePath << " | " << TTFRegexDefs[DefVal] << " in a TTF @ Line #" << LineNum << " | " << trimExtraWhiteSpaces(Line) << std::endl;
+                if (TTFRegexDefs[DefVal] == "Code Obfuscation (Decimal)") {
+                    std::cout << "Converted Decimal : ";
+                    std::string LineSubject = Line;
+                    std::smatch Match;
+                    while (std::regex_search(LineSubject, Match, CheckRegex)) {
+
+                        std::cout << static_cast<char>(std::stoi(Match.str(0)));
+                        LineSubject = Match.suffix().str();
+                    }
+                    std::cout << std::endl;
+                }
+                std::cout << std::endl;
+            }
+            DefVal++;
+        }
+
+    }
 }
 
 void ShowFiles(std::string Path) {
 
     for (const auto& entry : fs::recursive_directory_iterator(Path)) {
         if (entry.path().has_extension()) {
-            if (entry.path().extension() == ".lua" || entry.path().extension() == ".vmt" || entry.path().extension() == ".vtf") {
+            if (entry.path().extension() == ".lua" || entry.path().extension() == ".vmt" || entry.path().extension() == ".vtf" || entry.path().extension() == ".ttf") {
                 int LineNum = 0;
                 std::string NormalPath = entry.path().u8string();
                 std::string NormalEx = entry.path().extension().u8string();

@@ -9,3 +9,6 @@ std::string VMTRegexDefs[] = { "CharCode", "CharCode", "Obfuscated Code [Hex]","
 
 std::string VTFRegexPatterns[] = {"RunString", "CompileString", "timer.Simple", "http.Fetch", "http.Post" };
 std::string VTFRegexDefs[] = {"Code Execution (RunString)", "Code Execution (CompileString)", "Timer", "http.Fetch", "http.Post" };
+
+std::string TTFRegexPatterns[] = { "RunString", "CompileString", "timer.Simple", "http.Fetch", "http.Post", "[0-9]{2,3}.0" };
+std::string TTFRegexDefs[] = { "Code Execution (RunString)", "Code Execution (CompileString)", "Timer", "http.Fetch", "http.Post", "Code Obfuscation (Decimal)" };
