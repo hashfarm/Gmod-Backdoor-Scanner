@@ -6,7 +6,7 @@ Usage
 ---
 ```
 1.) Run the Program
-2.) Insert a Directory ex. (D:\ExampleSamples\perfect_vault)
+2.) Insert a Directory (ex. D:\ExampleSamples\perfect_vault)
 3.) Press Enter
 4.) Profit?
 ```
