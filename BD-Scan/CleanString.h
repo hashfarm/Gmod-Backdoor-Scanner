@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-std::string toRawString(std::string const& in)
+std::string toRawString(const std::string & in)
 {
     std::string ret = in;
     auto p = ret.find('\t');
@@ -13,12 +13,13 @@ std::string toRawString(std::string const& in)
     return ret;
 }
 
-std::string trimExtraWhiteSpaces(std::string& str) {
+std::string trimExtraWhiteSpaces(const std::string& str) {
+    std::string NotConst = str;
     std::string s;
     bool first = true;
     bool space = false;
     std::string::iterator iter;
-    for (iter = str.begin(); iter != str.end(); ++iter) {
+    for (iter = NotConst.begin(); iter != NotConst.end(); ++iter) {
         if (*iter == ' ') {
             if (first == false) {
                 space = true;
