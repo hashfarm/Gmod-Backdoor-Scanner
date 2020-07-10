@@ -1,5 +1,6 @@
 # Gmod-Backdoor-Scanner
 Simple Gmod Backdoor Scanner Written in C++
+Doesnt detect everything bro didnt say it did bro please dont bully me pelease :sob:
 
 ---
 Usage
