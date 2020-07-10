@@ -17,6 +17,7 @@ constexpr unsigned int str2int(const char* str, int h = 0)
 }
 
 void DecodeCharCode(std::string LineSubject, std::regex CheckRegex) {
+    std::cout << "Converted Char Code : ";
     std::smatch Match;
     while (std::regex_search(LineSubject, Match, CheckRegex)) {
 
@@ -53,10 +54,8 @@ void CheckLine(const std::string &Line, int LineNum, const std::string &FilePath
 
                 if (number_of_matches > 0) {
                     std::cout << FilePath << " | " << VMTRegexDefs[DefVal] << " in a VMT @ Line #" << LineNum << " | " << trimExtraWhiteSpaces(Line) << std::endl;
-                    if (VMTRegexDefs[DefVal] == "CharCode") {
-                        std::cout << "Converted Char Code : ";
+                    if (VMTRegexDefs[DefVal] == "CharCode")
                         DecodeCharCode(Line, CheckRegex);
-                    }
                     std::cout << std::endl;
                 }
                 DefVal++;
@@ -70,10 +69,8 @@ void CheckLine(const std::string &Line, int LineNum, const std::string &FilePath
 
                 if (number_of_matches > 0) {
                     std::cout << FilePath << " | " << VTFRegexDefs[DefVal] << " in a VTF @ Line #" << LineNum << " | " << trimExtraWhiteSpaces(Line) << std::endl;
-                    if (VTFRegexDefs[DefVal] == "CharCode") {
-                        std::cout << "Converted Char Code : ";
+                    if (VTFRegexDefs[DefVal] == "CharCode")
                         DecodeCharCode(Line, CheckRegex);
-                    }
                     std::cout << std::endl;
                 }
                 DefVal++;
