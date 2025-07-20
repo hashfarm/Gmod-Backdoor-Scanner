@@ -1,7 +1,9 @@
-# hashfarm - Gmod Backdoor Scanner
+# Gmod Backdoor Scanner
 
 ## Overview
-The Gmod Backdoor Scanner project is a C++ application developed by **hashfarm** to scan directories for potential backdoors in Garry's Mod (Gmod) related files. It supports scanning `.lua`, `.vmt`, `.vtf`, and `.ttf` files for suspicious patterns, such as obfuscated code or malicious function calls, using regular expressions defined in pattern files. The scanner generates a JSON-formatted log file (`scan_log.json`) with detailed detection results.
+The Gmod Backdoor Scanner project is a C++ application developed to scan directories for potential backdoors in Garry's Mod (Gmod) related files. It supports scanning `.lua`, `.vmt`, `.vtf`, and `.ttf` files for suspicious patterns, such as obfuscated code or malicious function calls, using regular expressions defined in pattern files. The scanner generates a JSON-formatted log file (`scan_log.json`) with detailed detection results.
+
+This project is not guaranteed to find everything, and will most likely include a few false positives with every scan. Use your own intuition alongside this tool for the best results.
 
 ## Features
 - Scans directories recursively for `.lua`, `.vmt`, `.vtf`, and `.ttf` files.
@@ -10,21 +12,7 @@ The Gmod Backdoor Scanner project is a C++ application developed by **hashfarm**
 - Unicode support for file paths using `std::wstring`.
 - Command-line argument support (`-d <directory>`) for automation.
 - JSON-formatted logging for easy parsing of results.
-- Platform-independent pause mechanism (`std::cin.get()` instead of `system("pause")`).
 - Robust error handling for file operations, regex compilation, and path validation.
-
-## Recent Changes
-The following improvements were implemented by **Hungryy2K** in July 2025:
-- **Fixed Linker Errors**: Defined global vectors (`LuaCheckPatterns`, `LuaCheckDefs`, etc.) in `BD-Scan.cpp` to resolve unresolved external symbol errors.
-- **Resolved Switch-Case Warnings**: Replaced `switch` with `if-else` in `CheckLine` to eliminate `fallthrough` warnings, ensuring compatibility with stricter compiler settings.
-- **Improved JSON Initialization**: Explicitly initialized `logJson` as `json::object()` to suppress static analyzer warnings about uninitialized members.
-- **Enhanced Detections Counter**: Refined logic in `ProcessFile` to count only actual pattern matches, improving accuracy of the `detections_found` metric.
-- **Added Unicode Support**: Used `std::wstring` for directory input to handle non-ASCII paths.
-- **Command-Line Support**: Added support for `-d <directory>` argument to specify the scan directory directly.
-- **JSON Logging**: Implemented structured JSON output in `scan_log.json` with details on detected patterns, file paths, and scan statistics.
-- **Performance Optimization**: Introduced parallel processing with `std::async` for faster scanning of large directories.
-- **Error Handling**: Added robust checks for empty files, invalid paths, and regex compilation errors.
-- **Pattern Refinement**: Updated `vmt_patterns.txt` and `ttf_patterns.txt` to improve CharCode detection with the regex `[0-9]{2,3}(,[0-9]{2,3})*`.
 
 ## Requirements
 - **C++17 Compiler**: Visual Studio 2019 or later (with `v143` toolset).
@@ -123,6 +111,19 @@ To test the scanner:
 ## Contributors
 - **hashfarm**: Original developer and creator of the Gmod Backdoor Scanner project.
 - **Hungryy2K**: Implemented major improvements in July 2025, including linker fixes, JSON logging, parallel processing, and Unicode support.
+
+## Recent Changes
+The following improvements were implemented by **Hungryy2K** in July 2025:
+- **Fixed Linker Errors**: Defined global vectors (`LuaCheckPatterns`, `LuaCheckDefs`, etc.) in `BD-Scan.cpp` to resolve unresolved external symbol errors.
+- **Resolved Switch-Case Warnings**: Replaced `switch` with `if-else` in `CheckLine` to eliminate `fallthrough` warnings, ensuring compatibility with stricter compiler settings.
+- **Improved JSON Initialization**: Explicitly initialized `logJson` as `json::object()` to suppress static analyzer warnings about uninitialized members.
+- **Enhanced Detections Counter**: Refined logic in `ProcessFile` to count only actual pattern matches, improving accuracy of the `detections_found` metric.
+- **Added Unicode Support**: Used `std::wstring` for directory input to handle non-ASCII paths.
+- **Command-Line Support**: Added support for `-d <directory>` argument to specify the scan directory directly.
+- **JSON Logging**: Implemented structured JSON output in `scan_log.json` with details on detected patterns, file paths, and scan statistics.
+- **Performance Optimization**: Introduced parallel processing with `std::async` for faster scanning of large directories.
+- **Error Handling**: Added robust checks for empty files, invalid paths, and regex compilation errors.
+- **Pattern Refinement**: Updated `vmt_patterns.txt` and `ttf_patterns.txt` to improve CharCode detection with the regex `[0-9]{2,3}(,[0-9]{2,3})*`.
 
 ## Future Improvements
 - Add support for additional file types or patterns.
