@@ -1,0 +1,6 @@
+RunString;;;Code Execution (RunString)
+CompileString;;;Code Execution (CompileString)
+timer.Simple;;;Timer
+http.Fetch;;;http.Fetch
+http.Post;;;http.Post
+getregistry;;;Call to getregistry
