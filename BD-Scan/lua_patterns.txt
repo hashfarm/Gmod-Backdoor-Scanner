@@ -1,0 +1,16 @@
+RunString;;;Code Execution (RunString)
+CompileString;;;Code Execution (CompileString)
+.vmt;;;VMT File Referenced
+http.Fetch;;;http.Fetch
+http.Post;;;http.Post
+STEAM_[0-9]+:[0-9]+:[0-9]+;;;Steam ID Referenced
+0[xX][0-9a-fA-F]+;;;Obfuscated / Encrypted Code
+\\[xX][0-9a-fA-F]+;;;Obfuscated / Encrypted Code [Hex Code]
+\\[0-9]+\\[0-9]+;;;Obfuscated / Encrypted Code
+:SetUserGroup(.superadmin.|.admin.);;;Setting User Group to Admin/SuperAdmin
+file.Read;;;Reading File
+file.Delete;;;Deleting File
+game.ConsoleCommand;;;Console Command
+getfenv;;;Call to getfenv()
+_G\[(.*?)\];;;References Global Table
+getregistry;;;Call to getregistry

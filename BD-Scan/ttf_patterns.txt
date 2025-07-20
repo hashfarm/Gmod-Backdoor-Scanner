@@ -1,0 +1,1 @@
+RunString;;;Code Execution (RunString) CompileString;;;Code Execution (CompileString) timer.Simple;;;Timer http.Fetch;;;http.Fetch http.Post;;;http.Post [0-9]{2,3}(,[0-9]{2,3})*;;;Code Obfuscation (Decimal) getregistry;;;Call to getregistry
