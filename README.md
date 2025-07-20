@@ -1,7 +1,7 @@
-# Gmod Backdoor Scanner
+# hashfarm - Gmod Backdoor Scanner
 
 ## Overview
-The Gmod Backdoor Scanner is a C++ application designed to scan directories for potential backdoors in Garry's Mod (Gmod) related files. It supports scanning `.lua`, `.vmt`, `.vtf`, and `.ttf` files for suspicious patterns, such as obfuscated code or malicious function calls, using regular expressions defined in pattern files. The scanner generates a JSON-formatted log file (`scan_log.json`) with detailed detection results.
+The Gmod Backdoor Scanner project is a C++ application developed by **hashfarm** to scan directories for potential backdoors in Garry's Mod (Gmod) related files. It supports scanning `.lua`, `.vmt`, `.vtf`, and `.ttf` files for suspicious patterns, such as obfuscated code or malicious function calls, using regular expressions defined in pattern files. The scanner generates a JSON-formatted log file (`scan_log.json`) with detailed detection results.
 
 ## Features
 - Scans directories recursively for `.lua`, `.vmt`, `.vtf`, and `.ttf` files.
@@ -34,7 +34,7 @@ The following improvements were implemented by **Hungryy2K** in July 2025:
 
 ## Installation
 1. **Clone or Download the Project**:
-   - Download the project files or clone the repository.
+   - Download the **hashfarm** project files or clone the repository.
 2. **Install nlohmann/json**:
    - Download `json.hpp` from https://github.com/nlohmann/json and place it in the project directory.
    - Ensure the project directory is included in the include path (configured in `BD-Scan.vcxproj`).
@@ -116,11 +116,12 @@ To test the scanner:
 
 ## Troubleshooting
 - **Linker Errors**: Ensure all global vectors are defined in `BD-Scan.cpp` and that `nlohmann/json.hpp` is correctly included.
-- **Compiler Warnings**: If warnings about `fallthrough` or JSON initialization persist, update Visual Studio or adjust the warning level (e.g., `/W3` instead of `/W4`).
+- **Compiler Warnings**: If warnings about JSON initialization persist, consider adjusting the warning level (e.g., `/W3` instead of `/W4`) or suppressing specific warnings with `#pragma warning(disable:26495)`.
 - **Missing Pattern Files**: Ensure `lua_patterns.txt`, `vmt_patterns.txt`, `vtf_patterns.txt`, and `ttf_patterns.txt` are in the working directory.
 - **File Access Issues**: Verify that the specified directory is accessible and contains valid files.
 
 ## Contributors
+- **hashfarm**: Original developer and creator of the Gmod Backdoor Scanner project.
 - **Hungryy2K**: Implemented major improvements in July 2025, including linker fixes, JSON logging, parallel processing, and Unicode support.
 
 ## Future Improvements
@@ -129,4 +130,4 @@ To test the scanner:
 - Enhance cross-platform compatibility (e.g., Linux support).
 - Add configuration options for custom log formats or scan parameters.
 
-For issues or feature requests, please contact the developer or open an issue in the project repository.
+For issues or feature requests, please contact the developer or open an issue in the **hashfarm** project repository.
