@@ -34,7 +34,7 @@ The following improvements were implemented by **Hungryy2K** in July 2025:
 
 ## Installation
 1. **Clone or Download the Project**:
-   - Download the **hashfarm** project files or clone the repository.
+   - Download the project files or clone the repository.
 2. **Install nlohmann/json**:
    - Download `json.hpp` from https://github.com/nlohmann/json and place it in the project directory.
    - Ensure the project directory is included in the include path (configured in `BD-Scan.vcxproj`).
