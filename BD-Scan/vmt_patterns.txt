@@ -1,1 +1,8 @@
-[0-9]{2,3}(,[0-9]{2,3})*;;;CharCode [0-9]{2,3}\;;;CharCode \[xX][0-9a-fA-F]+;;;Obfuscated Code [Hex] RunString;;;Code Execution (RunString) CompileString;;;Code Execution (CompileString) timer.Simple;;;Timer http.Fetch;;;http.Fetch http.Post;;;http.Post getregistry;;;Call to getregistry
+[0-9]{2,3}(,[0-9]{2,3})*;;;CharCode
+\[xX][0-9a-fA-F]+;;;Obfuscated Code [Hex]
+RunString;;;Code Execution (RunString)
+CompileString;;;Code Execution (CompileString)
+timer.Simple;;;Timer
+http.Fetch;;;http.Fetch
+http.Post;;;http.Post
+getregistry;;;Call to getregistry
