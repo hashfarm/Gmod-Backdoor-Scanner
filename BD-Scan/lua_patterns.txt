@@ -1,16 +1,62 @@
-RunString;;;Code Execution (RunString)
-CompileString;;;Code Execution (CompileString)
-.vmt;;;VMT File Referenced
-http.Fetch;;;http.Fetch
-http.Post;;;http.Post
-STEAM_[0-9]+:[0-9]+:[0-9]+;;;Steam ID Referenced
-0[xX][0-9a-fA-F]+;;;Obfuscated / Encrypted Code
-\\[xX][0-9a-fA-F]+;;;Obfuscated / Encrypted Code [Hex Code]
-\\[0-9]+\\[0-9]+;;;Obfuscated / Encrypted Code
-:SetUserGroup(.superadmin.|.admin.);;;Setting User Group to Admin/SuperAdmin
-file.Read;;;Reading File
-file.Delete;;;Deleting File
-game.ConsoleCommand;;;Console Command
-getfenv;;;Call to getfenv()
-_G\[(.*?)\];;;References Global Table
-getregistry;;;Call to getregistry
+RunString\s*\(;;;[CRITICAL] Code Execution (RunString)
+CompileString\s*\(;;;[CRITICAL] Code Execution (CompileString)
+\bloadstring\s*\(;;;[CRITICAL] Code Execution (loadstring)
+BroadcastLua\s*\(;;;[CRITICAL] Server Code Broadcast (BroadcastLua)
+SendLua\s*\(;;;[CRITICAL] Client Code Execution (SendLua)
+pcall\s*\(\s*RunString;;;[CRITICAL] Protected RunString Call
+pcall\s*\(\s*CompileString;;;[CRITICAL] Protected CompileString Call
+pcall\s*\(\s*loadstring;;;[CRITICAL] Protected loadstring Call
+CompileFile\s*\(;;;[CRITICAL] File Compilation
+http\.Fetch\s*\([^)]*function[^)]*RunString;;;[CRITICAL] Remote Code Execution via HTTP Fetch
+http\.Post\s*\([^)]*function[^)]*RunString;;;[CRITICAL] Remote Code Execution via HTTP Post
+\bgetfenv\s*\(;;;[HIGH] Environment Access (getfenv)
+\bsetfenv\s*\(;;;[HIGH] Environment Modification (setfenv)
+debug\.getregistry\s*\(;;;[HIGH] Registry Access
+debug\.setlocal\s*\(;;;[HIGH] Debug Local Modification
+debug\.setupvalue\s*\(;;;[HIGH] Debug Upvalue Modification
+debug\.sethook\s*\(;;;[HIGH] Debug Hook Set
+_G\s*\[[^\]]+\]\s*=\s*function;;;[HIGH] Dynamic Global Function Assignment
+_R\s*=\s*debug\.getregistry;;;[HIGH] Registry Table Access
+rawset\s*\(\s*_G\s*,;;;[HIGH] Raw Global Table Modification
+game\.ConsoleCommand\s*\(;;;[HIGH] Console Command Execution
+RunConsoleCommand\s*\(;;;[HIGH] Console Command Execution
+:SetUserGroup\s*\(\s*["'](superadmin|admin)["']\s*\);;;[CRITICAL] Setting User to Admin/Superadmin
+http\.Fetch\s*\([^)]*function[^)]*CompileString;;;[CRITICAL] Remote Code Compilation
+http\.Post\s*\([^)]*function[^)]*CompileString;;;[CRITICAL] Remote Code Compilation
+0[xX][0-9a-fA-F]{16,};;;[HIGH] Very Long Hex String (Obfuscation)
+\\x[0-9a-fA-F]{2}\\x[0-9a-fA-F]{2}\\x[0-9a-fA-F]{2};;;[MEDIUM] Multiple Hex Escapes
+["'][A-Za-z0-9+/]{80,}={0,2}["'];;;[HIGH] Base64 Encoded Data (Very Long)
+file\.Write\s*\(\s*["'][^"']*\.lua["'];;;[HIGH] Writing Lua File
+file\.Delete\s*\(;;;[MEDIUM] File Deletion
+sv_allowcslua;;;[CRITICAL] CSLua Setting Access
+rcon_password;;;[CRITICAL] RCON Password Access
+rcon\s+[a-zA-Z];;;[CRITICAL] RCON Command Execution
+assert\s*\(\s*CompileString;;;[CRITICAL] Assert CompileString
+assert\s*\(\s*RunString;;;[CRITICAL] Assert RunString
+os\.execute\s*\(;;;[CRITICAL] OS Command Execution
+io\.popen\s*\(;;;[CRITICAL] Process Pipe Open
+io\.open\s*\([^)]*["']w;;;[HIGH] File Write Operation
+package\.loadlib\s*\(;;;[CRITICAL] Native Library Load
+require\s*\(\s*["']ffi["']\s*\);;;[CRITICAL] FFI Library Load
+ffi\.cdef\s*\(;;;[CRITICAL] FFI C Definition
+ffi\.load\s*\(;;;[CRITICAL] FFI Library Load
+ffi\.C\.;;;[CRITICAL] FFI C Namespace Access
+coroutine\.wrap\s*\(\s*function[^)]*RunString;;;[CRITICAL] Coroutine Code Execution
+timer\.Simple\s*\([^)]*function[^)]*RunString;;;[CRITICAL] Delayed Code Execution
+timer\.Simple\s*\([^)]*function[^)]*http\.Fetch;;;[HIGH] Delayed HTTP Request
+hook\.Add\s*\([^)]*function[^)]*RunString;;;[CRITICAL] Hook with Code Execution
+net\.Receive\s*\(\s*["'][A-Za-z0-9]{40,}["'];;;[HIGH] Suspicious Network String (Very Long)
+util\.AddNetworkString\s*\(\s*["'][A-Za-z0-9]{40,}["'];;;[HIGH] Suspicious Network String (Very Long)
+string\.char\s*\(\s*[0-9]+\s*,\s*[0-9]+\s*,\s*[0-9]+\s*,\s*[0-9]+\s*,\s*[0-9]+;;;[HIGH] CharCode Obfuscation (5+ chars)
+table\.concat\s*\([^)]*string\.char;;;[HIGH] Obfuscated String Building
+(_G|_R)\s*\[\s*[^"\]]+\s*\];;;[HIGH] Dynamic Global/Registry Access (Variable Key)
+for\s+\w+\s*,\s*\w+\s+in\s+pairs\s*\(\s*debug\.getregistry;;;[HIGH] Iterating Debug Registry
+concommand\.Add\s*\([^)]*function[^)]*RunString;;;[CRITICAL] Console Command with RunString
+concommand\.Add\s*\([^)]*function[^)]*http;;;[HIGH] Console Command with HTTP
+net\.Receive\s*\([^)]*function[^)]*RunString;;;[CRITICAL] Network Receive with RunString
+net\.Receive\s*\([^)]*function[^)]*CompileString;;;[CRITICAL] Network Receive with CompileString
+util\.JSONToTable\s*\([^)]*RunString;;;[CRITICAL] JSON to RunString
+game\.CleanUpMap\s*\(;;;[MEDIUM] Map Cleanup (Potential Abuse)
+Entity\s*\(\s*[0-9]+\s*\)\s*:Remove;;;[MEDIUM] Entity Removal by ID
+player\.GetAll\s*\(\s*\)[^;]*:Kick;;;[HIGH] Mass Player Kick
+player\.GetAll\s*\(\s*\)[^;]*:Ban;;;[CRITICAL] Mass Player Ban

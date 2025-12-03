@@ -1,0 +1,12 @@
+# Known Backdoor Hashes Database
+# Format: hash;;;description (description is optional)
+# Lines starting with # are comments
+#
+# Add hashes of known malicious files here.
+# The scanner uses DJB2 hash algorithm.
+# To get a file's hash, check the scan_log.json after scanning.
+#
+# Example entries:
+# a1b2c3d4e5f67890;;;Known backdoor: evil_addon.lua
+# 1234567890abcdef;;;Malicious script from workshop
+#

@@ -2,7 +2,7 @@
 #include <string>
 #include <algorithm>
 
-std::string toRawString(const std::string& in) {
+inline std::string toRawString(const std::string& in) {
     std::string ret = in;
     size_t pos = 0;
     while ((pos = ret.find('\t', pos)) != std::string::npos) {
@@ -12,7 +12,7 @@ std::string toRawString(const std::string& in) {
     return ret;
 }
 
-std::string trimExtraWhiteSpaces(const std::string& str) {
+inline std::string trimExtraWhiteSpaces(const std::string& str) {
     std::string result = str;
     result.erase(std::unique(result.begin(), result.end(), [](char a, char b) {
         return std::isspace(a) && std::isspace(b);

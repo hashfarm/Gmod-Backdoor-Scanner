@@ -1,6 +1,13 @@
-RunString;;;Code Execution (RunString)
-CompileString;;;Code Execution (CompileString)
-timer.Simple;;;Timer
-http.Fetch;;;http.Fetch
-http.Post;;;http.Post
-getregistry;;;Call to getregistry
+RunString\s*\(;;;[CRITICAL] Code Execution (RunString) in VTF
+CompileString\s*\(;;;[CRITICAL] Code Execution (CompileString) in VTF
+loadstring\s*\(;;;[CRITICAL] Code Execution (loadstring) in VTF
+http\.Fetch\s*\(;;;[CRITICAL] HTTP Fetch in VTF (Suspicious)
+http\.Post\s*\(;;;[CRITICAL] HTTP Post in VTF (Suspicious)
+debug\.getregistry;;;[CRITICAL] Registry Access in VTF
+BroadcastLua\s*\(;;;[CRITICAL] Server Code Broadcast in VTF
+SendLua\s*\(;;;[CRITICAL] Client Code Execution in VTF
+\bgetfenv\s*\(;;;[CRITICAL] Environment Access in VTF
+\bsetfenv\s*\(;;;[CRITICAL] Environment Modification in VTF
+_G\s*\[\s*["'];;;[CRITICAL] Global Table Access in VTF
+[0-9]{2,3}(,[0-9]{2,3}){6,};;;[HIGH] CharCode Sequence (7+ numbers) in VTF
+\\x[0-9a-fA-F]{2}\\x[0-9a-fA-F]{2}\\x;;;[HIGH] Multiple Hex Escapes in VTF

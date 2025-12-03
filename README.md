@@ -125,10 +125,42 @@ The following improvements were implemented by **Hungryy2K** in July 2025:
 - **Error Handling**: Added robust checks for empty files, invalid paths, and regex compilation errors.
 - **Pattern Refinement**: Updated `vmt_patterns.txt` and `ttf_patterns.txt` to improve CharCode detection with the regex `[0-9]{2,3}(,[0-9]{2,3})*`.
 
+## NEW Features (December 2025)
+The following features were added in this version:
+
+### New Capabilities
+- **GMA Archive Support**: Scan inside `.gma` addon files without extraction
+- **Severity Levels**: All detections now classified as CRITICAL, HIGH, MEDIUM, or LOW
+- **Base64 Decoding**: Automatic decoding and display of Base64 obfuscated content
+- **HTML Reports**: Generate styled HTML reports with `--html` flag
+- **78+ Lua Patterns**: Expanded detection patterns for better coverage
+
+### New Command Line Options
+- `-s <severity>`: Filter by minimum severity level (low, medium, high, critical)
+- `-q, --quiet`: Quiet mode - suppress console output, show only summary
+- `--html`: Generate HTML report (`scan_report.html`)
+- `--diff`: Show only NEW detections since last scan
+- `-h, --help`: Show help message
+
+### Interactive Mode
+When running without arguments, you can enter path and options together:
+```
+Enter path [options]: C:/gmod/addons --html --diff
+```
+
+### New Files
+- `known_hashes.txt`: Database of known backdoor file hashes (auto-loaded)
+- `last_scan.json`: Previous scan results for diff mode comparison
+
+### Technical Improvements
+- **Thread Safety**: Fixed race conditions in concurrent logging
+- **Improved Pattern Files**: All patterns now include severity tags
+- **Better CharCode Detection**: Enhanced decoding for obfuscated numeric sequences
+
 ## Future Improvements
-- Add support for additional file types or patterns.
-- Implement base64 decoding for obfuscated code detection.
-- Enhance cross-platform compatibility (e.g., Linux support).
-- Add configuration options for custom log formats or scan parameters.
+- Cross-platform support (Linux/macOS)
+- Whitelist system for false positive management
+- Custom pattern file support
+- Export to CSV format
 
 For issues or feature requests, please contact the developer or open an issue in the **hashfarm** project repository.

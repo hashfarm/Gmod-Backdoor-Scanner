@@ -1,8 +1,13 @@
-[0-9]{2,3}(,[0-9]{2,3})*;;;CharCode
-\[xX][0-9a-fA-F]+;;;Obfuscated Code [Hex]
-RunString;;;Code Execution (RunString)
-CompileString;;;Code Execution (CompileString)
-timer.Simple;;;Timer
-http.Fetch;;;http.Fetch
-http.Post;;;http.Post
-getregistry;;;Call to getregistry
+[0-9]{2,3}(,[0-9]{2,3}){6,};;;[HIGH] CharCode Sequence (7+ numbers)
+\\x[0-9a-fA-F]{2}\\x[0-9a-fA-F]{2}\\x;;;[HIGH] Multiple Hex Escapes in VMT
+RunString\s*\(;;;[CRITICAL] Code Execution (RunString) in VMT
+CompileString\s*\(;;;[CRITICAL] Code Execution (CompileString) in VMT
+loadstring\s*\(;;;[CRITICAL] Code Execution (loadstring) in VMT
+http\.Fetch\s*\(;;;[CRITICAL] HTTP Fetch in VMT (Suspicious)
+http\.Post\s*\(;;;[CRITICAL] HTTP Post in VMT (Suspicious)
+debug\.getregistry;;;[CRITICAL] Registry Access in VMT
+BroadcastLua\s*\(;;;[CRITICAL] Server Code Broadcast in VMT
+SendLua\s*\(;;;[CRITICAL] Client Code Execution in VMT
+\bgetfenv\s*\(;;;[CRITICAL] Environment Access in VMT
+\bsetfenv\s*\(;;;[CRITICAL] Environment Modification in VMT
+_G\s*\[\s*["'];;;[CRITICAL] Global Table Access in VMT
