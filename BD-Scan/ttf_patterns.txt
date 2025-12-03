@@ -1,1 +1,13 @@
-RunString;;;Code Execution (RunString) CompileString;;;Code Execution (CompileString) timer.Simple;;;Timer http.Fetch;;;http.Fetch http.Post;;;http.Post [0-9]{2,3}(,[0-9]{2,3})*;;;Code Obfuscation (Decimal) getregistry;;;Call to getregistry
+[0-9]{2,3}(,[0-9]{2,3}){6,};;;[HIGH] CharCode Sequence (7+ numbers) in TTF
+\\x[0-9a-fA-F]{2}\\x[0-9a-fA-F]{2}\\x;;;[HIGH] Multiple Hex Escapes in TTF
+RunString\s*\(;;;[CRITICAL] Code Execution (RunString) in TTF
+CompileString\s*\(;;;[CRITICAL] Code Execution (CompileString) in TTF
+loadstring\s*\(;;;[CRITICAL] Code Execution (loadstring) in TTF
+http\.Fetch\s*\(;;;[CRITICAL] HTTP Fetch in TTF (Suspicious)
+http\.Post\s*\(;;;[CRITICAL] HTTP Post in TTF (Suspicious)
+debug\.getregistry;;;[CRITICAL] Registry Access in TTF
+BroadcastLua\s*\(;;;[CRITICAL] Server Code Broadcast in TTF
+SendLua\s*\(;;;[CRITICAL] Client Code Execution in TTF
+\bgetfenv\s*\(;;;[CRITICAL] Environment Access in TTF
+\bsetfenv\s*\(;;;[CRITICAL] Environment Modification in TTF
+_G\s*\[\s*["'];;;[CRITICAL] Global Table Access in TTF
