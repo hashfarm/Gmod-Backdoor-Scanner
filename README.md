@@ -110,10 +110,10 @@ To test the scanner:
 
 ## Contributors
 - **hashfarm**: Original developer and creator of the Gmod Backdoor Scanner project.
-- **Hungryy2K**: Implemented major improvements in July 2025, including linker fixes, JSON logging, parallel processing, and Unicode support.
+- **Hungryy2K/RRelicc**: Implemented major improvements in July 2025, including linker fixes, JSON logging, parallel processing, and Unicode support.
 
 ## Recent Changes
-The following improvements were implemented by **Hungryy2K** in July 2025:
+The following improvements were implemented by **Hungryy2K/RRelicc** in July 2025:
 - **Fixed Linker Errors**: Defined global vectors (`LuaCheckPatterns`, `LuaCheckDefs`, etc.) in `BD-Scan.cpp` to resolve unresolved external symbol errors.
 - **Resolved Switch-Case Warnings**: Replaced `switch` with `if-else` in `CheckLine` to eliminate `fallthrough` warnings, ensuring compatibility with stricter compiler settings.
 - **Improved JSON Initialization**: Explicitly initialized `logJson` as `json::object()` to suppress static analyzer warnings about uninitialized members.
@@ -126,7 +126,7 @@ The following improvements were implemented by **Hungryy2K** in July 2025:
 - **Pattern Refinement**: Updated `vmt_patterns.txt` and `ttf_patterns.txt` to improve CharCode detection with the regex `[0-9]{2,3}(,[0-9]{2,3})*`.
 
 ## NEW Features (December 2025)
-The following features were added in this version:
+The following features were added by RRelicc in this version:
 
 ### New Capabilities
 - **GMA Archive Support**: Scan inside `.gma` addon files without extraction
