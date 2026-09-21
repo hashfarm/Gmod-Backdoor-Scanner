@@ -1,0 +1,32 @@
+# Test cases for binary_patterns.txt, executed by the self-check and by CI.
+# Snippets are scanned as .vmt content. Same format as lua_patterns.test.txt.
+
++ BIN-001 ;;; "UnlitGeneric" { "$basetexture" "x" } RunString("p")
++ BIN-001 ;;; RunStringEx(code, "id")
+- BIN-001 ;;; "UnlitGeneric" { "$basetexture" "models/x" }
++ BIN-002 ;;; CompileString(code, "chunk")
+- BIN-002 ;;; "$translucent" 1
++ BIN-003 ;;; loadstring(payload)
+- BIN-003 ;;; "$alpha" 0.5
++ BIN-004 ;;; BroadcastLua("print(1)")
+- BIN-004 ;;; "$color" "[1 1 1]"
++ BIN-005 ;;; SendLua("print(1)")
+- BIN-005 ;;; "$envmap" "env_cubemap"
++ BIN-006 ;;; http.Fetch("http://x.tld/p")
+- BIN-006 ;;; "$surfaceprop" "metal"
++ BIN-007 ;;; http.Post("http://x.tld/p", data)
+- BIN-007 ;;; "$nocull" 1
++ BIN-008 ;;; debug.getregistry()
+- BIN-008 ;;; "$phong" 1
++ BIN-009 ;;; getfenv(1)
+- BIN-009 ;;; "$bumpmap" "models/x_normal"
++ BIN-010 ;;; setfenv(f, e)
+- BIN-010 ;;; "$selfillum" 1
++ BIN-011 ;;; _G["RunString"]
+- BIN-011 ;;; "$basetexture" "models/props/x"
++ BIN-012 ;;; 82,117,110,83,116,114,105,110,103
+- BIN-012 ;;; 1,2,3
++ BIN-013 ;;; \x52\x75\x6e\x53
+- BIN-013 ;;; \x52
++ BIN-014 ;;; "UnlitGeneric" { "$payload" "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZywgYW5kIHRoZW4gc29tZSBtb3JlIHRleHQgaGVyZS4=" }
+- BIN-014 ;;; "UnlitGeneric" { "$basetexture" "models/props/metal_crate01" }

@@ -348,3 +348,18 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# BD-Scan output
+scan_log.json
+last_scan.json
+scan_report.html
+scan_results.sarif
+
+# CMake build directory used by CONTRIBUTING.md and CI
+build/
+
+# Unrelated local tooling
+mcps/
+
+# Self-check binary built outside the solution
+selfcheck.exe

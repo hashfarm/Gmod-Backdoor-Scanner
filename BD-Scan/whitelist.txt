@@ -1,0 +1,52 @@
+# Whitelist / false-positive suppression.
+# Lines starting with # are comments. Three forms are accepted:
+#
+#   1. A SHA-256 hash (64 hex chars) on its own
+#      The file is skipped entirely, no matter what it contains.
+#
+#   2. <path glob>;;;<detection substring>
+#      Suppresses detections whose description contains the substring,
+#      but only for files whose path matches the glob.
+#
+#   3. <path glob>
+#      Suppresses every detection for files matching the glob.
+#
+#   4. <path glob>;;;<SHA-256 hash>
+#      Skips the file entirely, but only while it is at that path AND still has
+#      that exact content. This is the form to use for a stock game file that
+#      legitimately contains RunString: replace it with a backdoor and the hash
+#      no longer matches, so the file is scanned again. Form 3 on the same path
+#      would keep quiet about the replacement.
+#
+# For form 2, prefer the pattern ID (LUA-045, BIN-003, MOD-001) over words from
+# the description. IDs are stable; descriptions get reworded.
+#
+# Write the ID in full. The field is a substring, so LUA-1 matches LUA-121 too and
+# suppresses it without telling you. The scanner warns about an ID-shaped field
+# that no rule actually uses, but it cannot know which of several real rules you
+# meant. `--accept` checks the ID for you.
+#
+# Globs support * and ?. Matching is case-insensitive and / and \ are
+# interchangeable. The path is matched in full, so start with * to match a
+# suffix.
+#
+# A path glob is matched against where the file sits on YOUR disk. For a file
+# inside a .gma that is the archive itself, never the name the archive gives
+# the file. An archive author chooses those names freely, so allowing them to
+# satisfy a glob would let anyone name an entry addons/trusted/x.lua and walk
+# past a whitelist written for a real addon. To exempt one file inside an
+# archive, use its SHA-256; content cannot be faked the same way.
+#
+# Reports still show <archive path>/<file inside archive> so you can find the
+# file; only the matching is restricted.
+#
+# Examples:
+#
+# */addons/ulx/*;;;LUA-045
+# */addons/ulx/*;;;LUA-043
+# */lua/includes/modules/*;;;LUA-020
+# */addons/my_trusted_addon/*
+# e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+#
+# Suppressing a whole addon hides real backdoors in it too. Prefer form 2,
+# and re-check an entry whenever the addon updates.

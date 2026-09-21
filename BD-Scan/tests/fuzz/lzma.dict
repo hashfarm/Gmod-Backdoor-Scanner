@@ -1,0 +1,23 @@
+# libFuzzer dictionary for fuzz_lzma: the 13-byte .lzma (alone) header.
+# Byte 0 packs lc/lp/pb, bytes 1-4 are the dictionary size, bytes 5-12 the
+# uncompressed size (all ones means "unknown", which takes a different path).
+
+props_default="\x5d"
+props_lc0_lp0_pb0="\x00"
+props_lc8="\x08"
+props_max="\xe0"
+props_invalid="\xe1"
+
+dict_64k="\x00\x00\x01\x00"
+dict_1m="\x00\x00\x10\x00"
+dict_8m="\x00\x00\x80\x00"
+dict_tiny="\x01\x00\x00\x00"
+dict_max="\xff\xff\xff\xff"
+
+size_unknown="\xff\xff\xff\xff\xff\xff\xff\xff"
+size_zero="\x00\x00\x00\x00\x00\x00\x00\x00"
+size_small="\x40\x00\x00\x00\x00\x00\x00\x00"
+size_huge="\x00\x00\x00\x00\x01\x00\x00\x00"
+
+range_init="\x00"
+end_marker="\xff\xff\xff\xff"

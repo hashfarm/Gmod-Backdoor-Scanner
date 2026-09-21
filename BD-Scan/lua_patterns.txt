@@ -1,62 +1,155 @@
-RunString\s*\(;;;[CRITICAL] Code Execution (RunString)
-CompileString\s*\(;;;[CRITICAL] Code Execution (CompileString)
-\bloadstring\s*\(;;;[CRITICAL] Code Execution (loadstring)
-BroadcastLua\s*\(;;;[CRITICAL] Server Code Broadcast (BroadcastLua)
-SendLua\s*\(;;;[CRITICAL] Client Code Execution (SendLua)
-pcall\s*\(\s*RunString;;;[CRITICAL] Protected RunString Call
-pcall\s*\(\s*CompileString;;;[CRITICAL] Protected CompileString Call
-pcall\s*\(\s*loadstring;;;[CRITICAL] Protected loadstring Call
-CompileFile\s*\(;;;[CRITICAL] File Compilation
-http\.Fetch\s*\([^)]*function[^)]*RunString;;;[CRITICAL] Remote Code Execution via HTTP Fetch
-http\.Post\s*\([^)]*function[^)]*RunString;;;[CRITICAL] Remote Code Execution via HTTP Post
-\bgetfenv\s*\(;;;[HIGH] Environment Access (getfenv)
-\bsetfenv\s*\(;;;[HIGH] Environment Modification (setfenv)
-debug\.getregistry\s*\(;;;[HIGH] Registry Access
-debug\.setlocal\s*\(;;;[HIGH] Debug Local Modification
-debug\.setupvalue\s*\(;;;[HIGH] Debug Upvalue Modification
-debug\.sethook\s*\(;;;[HIGH] Debug Hook Set
-_G\s*\[[^\]]+\]\s*=\s*function;;;[HIGH] Dynamic Global Function Assignment
-_R\s*=\s*debug\.getregistry;;;[HIGH] Registry Table Access
-rawset\s*\(\s*_G\s*,;;;[HIGH] Raw Global Table Modification
-game\.ConsoleCommand\s*\(;;;[HIGH] Console Command Execution
-RunConsoleCommand\s*\(;;;[HIGH] Console Command Execution
-:SetUserGroup\s*\(\s*["'](superadmin|admin)["']\s*\);;;[CRITICAL] Setting User to Admin/Superadmin
-http\.Fetch\s*\([^)]*function[^)]*CompileString;;;[CRITICAL] Remote Code Compilation
-http\.Post\s*\([^)]*function[^)]*CompileString;;;[CRITICAL] Remote Code Compilation
-0[xX][0-9a-fA-F]{16,};;;[HIGH] Very Long Hex String (Obfuscation)
-\\x[0-9a-fA-F]{2}\\x[0-9a-fA-F]{2}\\x[0-9a-fA-F]{2};;;[MEDIUM] Multiple Hex Escapes
-["'][A-Za-z0-9+/]{80,}={0,2}["'];;;[HIGH] Base64 Encoded Data (Very Long)
-file\.Write\s*\(\s*["'][^"']*\.lua["'];;;[HIGH] Writing Lua File
-file\.Delete\s*\(;;;[MEDIUM] File Deletion
-sv_allowcslua;;;[CRITICAL] CSLua Setting Access
-rcon_password;;;[CRITICAL] RCON Password Access
-rcon\s+[a-zA-Z];;;[CRITICAL] RCON Command Execution
-assert\s*\(\s*CompileString;;;[CRITICAL] Assert CompileString
-assert\s*\(\s*RunString;;;[CRITICAL] Assert RunString
-os\.execute\s*\(;;;[CRITICAL] OS Command Execution
-io\.popen\s*\(;;;[CRITICAL] Process Pipe Open
-io\.open\s*\([^)]*["']w;;;[HIGH] File Write Operation
-package\.loadlib\s*\(;;;[CRITICAL] Native Library Load
-require\s*\(\s*["']ffi["']\s*\);;;[CRITICAL] FFI Library Load
-ffi\.cdef\s*\(;;;[CRITICAL] FFI C Definition
-ffi\.load\s*\(;;;[CRITICAL] FFI Library Load
-ffi\.C\.;;;[CRITICAL] FFI C Namespace Access
-coroutine\.wrap\s*\(\s*function[^)]*RunString;;;[CRITICAL] Coroutine Code Execution
-timer\.Simple\s*\([^)]*function[^)]*RunString;;;[CRITICAL] Delayed Code Execution
-timer\.Simple\s*\([^)]*function[^)]*http\.Fetch;;;[HIGH] Delayed HTTP Request
-hook\.Add\s*\([^)]*function[^)]*RunString;;;[CRITICAL] Hook with Code Execution
-net\.Receive\s*\(\s*["'][A-Za-z0-9]{40,}["'];;;[HIGH] Suspicious Network String (Very Long)
-util\.AddNetworkString\s*\(\s*["'][A-Za-z0-9]{40,}["'];;;[HIGH] Suspicious Network String (Very Long)
-string\.char\s*\(\s*[0-9]+\s*,\s*[0-9]+\s*,\s*[0-9]+\s*,\s*[0-9]+\s*,\s*[0-9]+;;;[HIGH] CharCode Obfuscation (5+ chars)
-table\.concat\s*\([^)]*string\.char;;;[HIGH] Obfuscated String Building
-(_G|_R)\s*\[\s*[^"\]]+\s*\];;;[HIGH] Dynamic Global/Registry Access (Variable Key)
-for\s+\w+\s*,\s*\w+\s+in\s+pairs\s*\(\s*debug\.getregistry;;;[HIGH] Iterating Debug Registry
-concommand\.Add\s*\([^)]*function[^)]*RunString;;;[CRITICAL] Console Command with RunString
-concommand\.Add\s*\([^)]*function[^)]*http;;;[HIGH] Console Command with HTTP
-net\.Receive\s*\([^)]*function[^)]*RunString;;;[CRITICAL] Network Receive with RunString
-net\.Receive\s*\([^)]*function[^)]*CompileString;;;[CRITICAL] Network Receive with CompileString
-util\.JSONToTable\s*\([^)]*RunString;;;[CRITICAL] JSON to RunString
-game\.CleanUpMap\s*\(;;;[MEDIUM] Map Cleanup (Potential Abuse)
-Entity\s*\(\s*[0-9]+\s*\)\s*:Remove;;;[MEDIUM] Entity Removal by ID
-player\.GetAll\s*\(\s*\)[^;]*:Kick;;;[HIGH] Mass Player Kick
-player\.GetAll\s*\(\s*\)[^;]*:Ban;;;[CRITICAL] Mass Player Ban
+# Patterns for .lua files.
+# Format: regex;;;[SEVERITY] ID Description;;;Optional hint
+#
+# The ID is the stable identifier. It is what --diff keys on and what a
+# whitelist entry should reference, so descriptions can be reworded without
+# invalidating baselines or whitelists. Every ID has at least one + and one -
+# case in lua_patterns.test.txt, checked by the self-check and by CI.
+#
+# The third field is optional and is written for a server owner who does not
+# read Lua: what the construct does and what separates a legitimate use from a
+# malicious one. It is shown in the HTML report and stored in scan_log.json.
+#
+# Severity reflects what the construct means *in Garry's Mod specifically*, not
+# how dangerous it sounds in general Lua.
+
+# --- Direct code execution ---
+\bRunString(?:Ex)?\s*\(|(?:^|[^\w."'])RunString(?:Ex)?\s*(?:["']|\[=*\[);;;[CRITICAL] LUA-001 Code Execution (RunString);;;Runs Lua source built at runtime. Legitimate addons almost never need this. Check where the string comes from: a literal is usually harmless, anything arriving from HTTP, a net message or a decoded blob is not.;;;tags=execution added=2025-12-03
+\bCompileString\s*\(|(?:^|[^\w."'])CompileString\s*(?:["']|\[=*\[);;;[CRITICAL] LUA-002 Code Execution (CompileString);;;Turns a string into a callable function. Same question as RunString: trace the string back to its source.;;;tags=execution added=2025-12-03 ref=https://wiki.facepunch.com/gmod/Global.CompileString
+\bloadstring\s*\(|(?:^|[^\w."'])loadstring\s*(?:["']|\[=*\[);;;[CRITICAL] LUA-003 Code Execution (loadstring);;;The classic Lua way to execute a string. Trace where the string comes from.;;;tags=execution added=2025-12-03
+(?:^|[^\w.:"'])load\s*\((?!\s*[A-Za-z]+\s+[A-Za-z]);;;[CRITICAL] LUA-188 Code Execution (load);;;Loads a chunk of Lua from a string or a reader function and returns it ready to run. Garry's Mod keeps this next to loadstring, and a backdoor written to slip past a scanner built around loadstring uses it instead -- one sample in the corpus picks it deliberately, falling back to loadstring only when load is missing. Trace where the chunk comes from: a constant is usually harmless, anything arriving from HTTP, a net message or a decoded blob is not.;;;tags=execution added=2026-09-19
+\bBroadcastLua\s*\(\s*(?!(?:string\.format\s*\(\s*)?["'\[])[^\s)];;;[CRITICAL] LUA-004 Server Code Broadcast With A Computed String;;;Runs Lua on every connected player from source assembled at runtime. A literal string, or a literal string.format template, is routine gamemode work; a variable means whoever controls that variable controls every client.;;;tags=execution added=2025-12-03 ref=https://wiki.facepunch.com/gmod/Global.BroadcastLua
+\bSendLua\s*\(\s*(?!(?:string\.format\s*\(\s*)?["'\[])[^\s)];;;[CRITICAL] LUA-005 Client Code Execution With A Computed String;;;Runs Lua on one client from a string built at runtime. Garry's Mod's own gamemodes call SendLua with literal strings and literal format templates constantly, so a computed argument is the part that matters.;;;tags=execution added=2025-12-03 ref=https://wiki.facepunch.com/gmod/Player:SendLua
+\b(?:SendLua|BroadcastLua)\s*\(\s*(?:string\.format\s*\(\s*)?["'\[];;;[LOW] LUA-009 Client Code Execution With A Literal;;;Sends a fixed piece of Lua to clients, possibly with values filled into a fixed template. Common in gamemodes and tools; worth reading only if the literal itself does something unexpected, or if a %s slot takes player-supplied text.;;;added=2026-09-16 tags=execution
+\bCompileFile\s*\(|(?:^|[^\w."'])CompileFile\s*(?:["']|\[=*\[);;;[HIGH] LUA-006 File Compilation;;;Compiles a Lua file from disk. Only dangerous if the file itself was planted, so check what path is passed and whether anything writes to it.;;;tags=execution added=2025-12-03 ref=https://wiki.facepunch.com/gmod/Global.CompileFile
+[(,]\s*(?:RunString(?:Ex)?|CompileString|CompileFile|BroadcastLua|SendLua)\s*[,)]|\b(?!(?:RunString(?:Ex)?|CompileString|CompileFile|BroadcastLua|SendLua)\s*=)\w+\s*=\s*(?:RunString(?:Ex)?|CompileString|CompileFile|BroadcastLua|SendLua)\b(?!\s*[("']);;;[CRITICAL] LUA-007 Execution Function Passed Around As A Value;;;An execution function is handed to something else instead of being called: passed straight to http.Fetch as its callback, or stored under a different name. That is deliberate indirection and a common way to stay under a scanner's radar. Caching a function under its own name, as in local RunString = RunString, is a speed trick every Lua library uses and is not reported.;;;tags=execution added=2025-12-03
+\b(?:(?:RunString(?:Ex)?|CompileString|loadstring)\s*\([\s\S]{0,200}?\bfile\.Read\s*\(|file\.Read\s*\([\s\S]{0,200}?\b(?:RunString(?:Ex)?|CompileString|loadstring)\s*\();;;[CRITICAL] LUA-008 File Contents Executed as Code;;;A file is read off disk and its contents are executed. When the path points at a material, sound or texture, this is the loader half of a backdoor whose payload is parked in an asset file where nobody looks.;;;tags=execution added=2025-12-03 ref=https://wiki.facepunch.com/gmod/file.Read
+
+# --- Remote or deferred code execution ---
+\b(?:http\.(?:Fetch|Post)|HTTP)\s*\([\s\S]{0,600}?\b(?:RunString(?:Ex)?|CompileString|loadstring)\b;;;[CRITICAL] LUA-010 Remote Code Execution via HTTP;;;Code is downloaded and then executed. This is the single most common backdoor shape. Look at the URL: whoever controls it controls your server.;;;tags=execution,remote added=2025-12-03
+\btimer\.(?:Simple|Create)\s*\([\s\S]{0,400}?\b(?:RunString(?:Ex)?|CompileString)\b;;;[CRITICAL] LUA-011 Delayed Code Execution via Timer;;;Execution is delayed or repeated on a timer, which hides it from anyone watching startup. A repeating timer around code execution is a beacon.;;;tags=execution,remote added=2025-12-03
+\bhook\.Add\s*\([\s\S]{0,400}?\b(?:RunString(?:Ex)?|CompileString)\b;;;[CRITICAL] LUA-012 Hook with Code Execution;;;Code execution wired into a game event, so it fires on player join, spawn or similar rather than at load.;;;tags=execution,remote added=2025-12-03 ref=https://wiki.facepunch.com/gmod/hook.Add
+\bnet\.Receive\s*\([\s\S]{0,400}?\b(?:RunString(?:Ex)?|CompileString)\b;;;[CRITICAL] LUA-013 Network Receive with Code Execution;;;Executes code arriving from a client. If the handler does not verify the sender is an admin, any player can run Lua on your server.;;;tags=execution,remote added=2025-12-03 ref=https://wiki.facepunch.com/gmod/net.Receive
+\bconcommand\.Add\s*\([\s\S]{0,400}?\b(?:RunString(?:Ex)?|CompileString)\b;;;[CRITICAL] LUA-014 Console Command with Code Execution;;;Registers a console command that executes code. Check whether the handler verifies who is calling it.;;;tags=execution,remote added=2025-12-03 ref=https://wiki.facepunch.com/gmod/concommand.Add
+\bcoroutine\.(?:wrap|create)\s*\(\s*function[\s\S]{0,400}?\b(?:RunString(?:Ex)?|CompileString)\b;;;[CRITICAL] LUA-015 Coroutine with Code Execution;;;Execution wrapped in a coroutine, which obscures the call stack.;;;tags=execution,remote added=2025-12-03
+\butil\.JSONToTable[\s\S]{0,400}?\b(?:RunString(?:Ex)?|CompileString)\b;;;[CRITICAL] LUA-016 JSON Payload Passed to Code Execution;;;A JSON response is parsed and part of it is executed as code. The remote side decides what runs.;;;tags=execution,remote added=2025-12-03
+\b(?:util\.Base64Decode[\s\S]{0,200}?\b(?:RunString(?:Ex)?|CompileString)\b|(?:RunString(?:Ex)?|CompileString)\s*\([\s\S]{0,200}?util\.Base64Decode);;;[CRITICAL] LUA-017 Base64-Decoded Payload Executed;;;Code is Base64-encoded and then executed. Encoding serves no purpose here except to make the payload unreadable.;;;tags=execution,remote added=2025-12-03
+\bconcommand\.Add\s*\([\s\S]{0,400}?\bhttp\.(?:Fetch|Post)\b;;;[HIGH] LUA-018 Console Command Triggering HTTP Request;;;A console command that talks to a remote server. Check the URL and what data is sent.;;;tags=execution,remote added=2025-12-03 ref=https://wiki.facepunch.com/gmod/concommand.Add
+\btimer\.(?:Simple|Create)\s*\([\s\S]{0,400}?\bhttp\.(?:Fetch|Post)\b;;;[MEDIUM] LUA-019 Delayed or Repeating HTTP Request;;;Often a harmless update or statistics check. Confirm the URL belongs to the addon author and look at what is sent.;;;tags=execution,remote added=2025-12-03
+
+# --- Environment, registry and global table ---
+\bgetfenv\s*\(;;;[HIGH] LUA-020 Environment Access (getfenv);;;Reads the variable environment of a function. Used legitimately by sandboxing and module loaders, and by backdoors to reach globals that were hidden from them.;;;tags=environment added=2025-12-03 ref=https://wiki.facepunch.com/gmod/Global.getfenv
+\bsetfenv\s*\(;;;[HIGH] LUA-021 Environment Modification (setfenv);;;Replaces a function's environment. Legitimate in sandboxes; also how code hides what it touches.;;;tags=environment added=2025-12-03 ref=https://wiki.facepunch.com/gmod/Global.setfenv
+\bdebug\.getregistry\s*\(;;;[MEDIUM] LUA-022 Debug Registry Access;;;Very common: most addons use it to reach a metatable. Only interesting in combination with other findings in the same file.;;;tags=environment added=2025-12-03 ref=https://wiki.facepunch.com/gmod/debug.getregistry
+\bdebug\.setlocal\s*\(;;;[HIGH] LUA-023 Debug Local Modification;;;Rewrites a local variable inside a running function. Almost never legitimate in an addon.;;;tags=environment added=2025-12-03 ref=https://wiki.facepunch.com/gmod/debug.setlocal
+\bdebug\.setupvalue\s*\(;;;[HIGH] LUA-024 Debug Upvalue Modification;;;Rewrites a captured variable inside an existing function, which is how a permission check in someone else's addon gets neutered without touching their file.;;;tags=environment added=2025-12-03 ref=https://wiki.facepunch.com/gmod/debug.setupvalue
+\bdebug\.getupvalue\s*\(;;;[HIGH] LUA-025 Debug Upvalue Read (Closure Inspection);;;Reads captured variables out of another addon's functions. Paired with setupvalue this is closure hijacking.;;;tags=environment added=2025-12-03 ref=https://wiki.facepunch.com/gmod/debug.getupvalue
+\bdebug\.sethook\s*\(;;;[HIGH] LUA-026 Debug Hook Set;;;Installs a callback that fires on every Lua instruction. Legitimate in profilers, otherwise a red flag.;;;tags=environment added=2025-12-03 ref=https://wiki.facepunch.com/gmod/debug.sethook
+_G\s*\[[^\]]{1,200}\]\s*=\s*function;;;[HIGH] LUA-027 Dynamic Global Function Assignment;;;Defines a global function under a computed name. Module loaders do this; so does code that wants its entry point to be hard to grep for.;;;tags=environment added=2025-12-03
+(?:_G|_R|_ENV|getfenv\s*\(\s*[^)]{0,20}\))\s*\[\s*["'](?:RunString|RunStringEx|CompileString|loadstring|CompileFile|BroadcastLua|SendLua|getfenv|setfenv|require|pcall|RunConsoleCommand)["']\s*\];;;[CRITICAL] LUA-028 Dangerous Function via Global Table Lookup;;;Reaches a dangerous function through the global table instead of naming it directly. There is no legitimate reason to write it this way; the point is to defeat a text search.;;;tags=environment added=2025-12-03
+(?:_G|_R|_ENV|getfenv\s*\(\s*[^)]{0,20}\))\s*\[[^"'\]]{1,200}\];;;[MEDIUM] LUA-029 Dynamic Global/Registry Access (Variable Key);;;A global is looked up by a variable name, so what is accessed is not visible in the source. Common in module loaders, also used to hide the target.;;;tags=environment added=2025-12-03
+\brawset\s*\(\s*_G\s*,;;;[HIGH] LUA-030 Raw Global Table Modification;;;Writes a global while bypassing any metatable protection a gamemode installed.;;;tags=environment added=2025-12-03 ref=https://wiki.facepunch.com/gmod/Global.rawset
+(?:_G|_R|_ENV|getfenv\s*\(\s*[^)]{0,20}\))\s*\[[^"'\]]{1,200}\]\s*\(;;;[HIGH] LUA-031 Dynamic Global Called By A Variable Key;;;A global is looked up by a name held in a variable and then called straight away. Which function runs is decided at runtime and appears nowhere in the source, which is the point: the name of the dangerous call is never written down. Factory code does this legitimately, so read what the variable holds. Assembled from pieces, or arriving over the network, makes this an execution primitive.;;;tags=obfuscation,execution added=2026-09-16
+\(\s*["'][^"'\n]{2,}["']\s*\)\s*:\s*(?:gsub|sub|reverse)\s*\(;;;[MEDIUM] LUA-032 String Literal Rewritten In Place;;;A string constant rewritten on the spot, without ever being stored in a variable. Only the rewriting methods count here: ("..."):format() and ("..."):rep() are everyday Lua and are not reported. Substituting into or slicing a constant is how a name is kept out of the file that uses it. Work out what it evaluates to.;;;tags=obfuscation added=2026-09-16
+
+# --- Privilege escalation and admin takeover ---
+:SetUserGroup\s*\(\s*["'](?:superadmin|admin)["']\s*\);;;[CRITICAL] LUA-040 Setting User to Admin/Superadmin;;;Grants admin rights from code. Check which player this applies to and what condition guards it. A hardcoded SteamID here is a backdoor.;;;tags=privilege added=2025-12-03
+(?:\bIs(?:Super)?Admin\s*=\s*function|\bfunction\s+\w+\s*[:.]\s*Is(?:Super)?Admin\s*\();;;[HIGH] LUA-041 Admin Check Overridden;;;Redefines the function the whole server uses to decide who is an admin. Some gamemodes legitimately do this; read the body and check it cannot return true for an attacker.;;;tags=privilege added=2025-12-03
+["']STEAM_[0-5]:[01]:[0-9]{4,}["'];;;[MEDIUM] LUA-042 Hardcoded SteamID;;;Very common in owner configuration. Check whose ID it is, and whether it appears next to a permission grant.;;;tags=privilege added=2025-12-03
+\bucl\.add(?:User|Group)\s*\(;;;[MEDIUM] LUA-043 Direct ULib Permission Change;;;Changes ULX permissions from code instead of through the admin menu. ULib and ULX do this constantly in their own files, which is why this is not HIGH; in an unrelated addon it is worth reading.;;;tags=privilege added=2025-12-03
+\b(?:RunConsoleCommand|game\.ConsoleCommand)\s*\(\s*["'](?:sv_allowcslua|rcon_password|ulx adduser|ulx addgroup);;;[CRITICAL] LUA-044 Security-Relevant Console Command;;;Disables a protection or grants permissions from code. sv_allowcslua 1 in particular lets any client run Lua on your server.;;;tags=privilege added=2025-12-03
+\b(?:RunConsoleCommand|game\.ConsoleCommand)\s*\(\s*["'](?:sv_cheats|sv_password|sv_kickerrornum);;;[HIGH] LUA-181 Server Setting Changed From Code;;;Changes a server setting that affects everyone. Demo and recording tools legitimately toggle sv_cheats; check that the code around it explains why.;;;added=2026-09-16 tags=privilege
+\b(?:RunConsoleCommand|game\.ConsoleCommand)\s*\(\s*(?!["'\[])[^\s)];;;[MEDIUM] LUA-045 Console Command Built At Runtime;;;The command name is a variable rather than something you can read. Every addon runs console commands, so only the ones whose name is assembled at runtime say anything; look at where the string comes from.;;;tags=privilege added=2025-12-03
+\bsv_allowcslua\b;;;[HIGH] LUA-046 CSLua Setting Referenced;;;This convar controls whether clients may run their own Lua. If something sets it to 1, every player can execute code.;;;tags=privilege added=2025-12-03
+\brcon_password\b;;;[HIGH] LUA-047 RCON Password Referenced;;;Addons have no reason to read the RCON password. If it is being read, find out where it goes.;;;tags=privilege added=2025-12-03
+:ConCommand\s*\(\s*["']\s*(?:connect|retry|disconnect|quit|exit|unbindall|kill)\b;;;[HIGH] LUA-048 Forced Client Command (Redirect/Disconnect);;;Forces a command on a player's own client, for example connecting them to another server. This is how player-stealing addons work, and also how a server network's hub sends people between its own servers. Look at what address it sends them to and what triggers it.;;;tags=privilege added=2025-12-03
+
+# --- Obfuscation ---
+0[xX][0-9a-fA-F]{16,8000};;;[MEDIUM] LUA-050 Very Long Hex String;;;A long hex constant, often an encryption key or an encoded payload rather than a real number.;;;tags=obfuscation added=2025-12-03
+\\x[0-9a-fA-F]{2}\\x[0-9a-fA-F]{2}\\x[0-9a-fA-F]{2};;;[MEDIUM] LUA-051 Multiple Hex Escapes;;;Text written as hex escapes so it does not appear as readable text. The scanner decodes it; read the decoded line.;;;tags=obfuscation added=2025-12-03
+["'][A-Za-z0-9+/]{80,8000}(?:={0,2}["']|[A-Za-z0-9+/]);;;[HIGH] LUA-052 Base64 Encoded Data (Quoted);;;A large encoded blob. Check the decoded content shown next to it, and whether anything executes the result.;;;tags=obfuscation added=2025-12-03
+\[\[\s*[A-Za-z0-9+/]{80,8000}(?:={0,2}\s*\]\]|[A-Za-z0-9+/]);;;[HIGH] LUA-053 Base64 Encoded Data (Long String);;;A large encoded blob in a long-string literal, which is where big payloads are usually parked.;;;tags=obfuscation added=2025-12-03
+\bstring\.char\s*\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*\d+;;;[HIGH] LUA-054 CharCode Obfuscation (5+ chars);;;Text built from character codes so it cannot be found by searching. The scanner shows the decoded text.;;;tags=obfuscation added=2025-12-03 ref=https://wiki.facepunch.com/gmod/string.char
+\btable\.concat\s*\([\s\S]{0,200}?string\.char;;;[HIGH] LUA-055 Obfuscated String Building;;;A string assembled character by character, which serves no purpose except to hide it.;;;tags=obfuscation added=2025-12-03 ref=https://wiki.facepunch.com/gmod/table.concat
+(?:\bstring\.reverse\s*\(\s*["']|\)\s*:\s*reverse\s*\(\s*\));;;[MEDIUM] LUA-056 Reversed String Literal;;;A literal written backwards and reversed at runtime, to defeat searching. The scanner folds it back.;;;tags=obfuscation added=2025-12-03 ref=https://wiki.facepunch.com/gmod/string.reverse
+\bstring\.format\s*\(\s*["'](?:%c){3,};;;[HIGH] LUA-057 CharCode Obfuscation via string.format;;;Another way to build text from character codes rather than writing it out.;;;tags=obfuscation added=2025-12-03 ref=https://wiki.facepunch.com/gmod/string.format
+:gsub\s*\(\s*["']\.\.["']\s*,\s*function;;;[HIGH] LUA-058 Byte-Pair Decoding Loop;;;Walks a string two characters at a time through a function, the standard shape of a hex decoder.;;;tags=obfuscation added=2025-12-03
+\bbit\.bxor[\s\S]{0,150}?string\.char;;;[HIGH] LUA-059 XOR Decoding Loop;;;XOR plus character building is a decryption routine. Whatever it produces was meant not to be read.;;;tags=obfuscation added=2025-12-03
+
+# --- Suspicious network identifiers ---
+\bnet\.Receive\s*\(\s*["'][A-Za-z0-9]{40,}["'];;;[MEDIUM] LUA-060 Very Long Network String (net.Receive);;;A network channel named with a long random-looking string, typical of a hidden control channel. Addons normally use readable names.;;;tags=network added=2025-12-03 ref=https://wiki.facepunch.com/gmod/net.Receive
+\butil\.AddNetworkString\s*\(\s*["'][A-Za-z0-9]{40,}["'];;;[MEDIUM] LUA-061 Very Long Network String (AddNetworkString);;;Registers a channel with a random-looking name. See LUA-060.;;;tags=network added=2025-12-03 ref=https://wiki.facepunch.com/gmod/util.AddNetworkString
+
+# --- Exfiltration and command-and-control indicators ---
+discord(?:app)?\.com/api/webhooks;;;[MEDIUM] LUA-070 Discord Webhook;;;Sends data to a Discord channel. Widely used for legitimate server logging. Check what is sent: player data, chat or passwords are not routine.;;;tags=exfiltration,network added=2025-12-03
+https?://(?:\d{1,3}\.){3}\d{1,3};;;[HIGH] LUA-071 Hardcoded IP Address URL;;;A bare IP address instead of a domain. Legitimate services use domain names; an IP avoids leaving a registration trail.;;;tags=exfiltration,network added=2025-12-03
+(?:pastebin\.com/raw|hastebin\.com/raw|paste\.ee/r/|bit\.ly/|tinyurl\.com/);;;[HIGH] LUA-072 Paste Site or URL Shortener;;;Paste sites and shorteners host anonymous content that can be swapped at any time. An addon fetching from one is fetching from someone with no accountability.;;;tags=exfiltration,network added=2025-12-03
+(?:raw\.githubusercontent\.com|gitlab\.com/[^\s"']+/raw/);;;[MEDIUM] LUA-073 Code Hosting Raw URL;;;Common in auto-updaters and usually fine. Check that the account and repository belong to the addon author, and that nothing executes what comes back.;;;tags=exfiltration,network added=2025-12-03
+
+# --- File system ---
+\bfile\.Write\s*\(\s*["'][^"']*\.lua["'];;;[MEDIUM] LUA-080 Writing a Lua File (blocked by GMod, but shows intent);;;Garry's Mod refuses to write .lua files, so this cannot succeed. It is still worth knowing the code tried.;;;tags=filesystem added=2025-12-03 ref=https://wiki.facepunch.com/gmod/file.Write
+\bfile\.Delete\s*\(;;;[LOW] LUA-081 File Deletion;;;Routine for cache and settings files, which is all an addon can reach.;;;tags=filesystem added=2025-12-03 ref=https://wiki.facepunch.com/gmod/file.Delete
+
+# --- APIs that do not exist in Garry's Mod ---
+\b(?:os\.(?:execute|remove|rename|getenv|exit|tmpname)|io\.(?:open|popen|lines|input|output)|package\.loadlib|ffi\.(?:cdef|load|C))\b|require\s*\(\s*["']ffi["'];;;[HIGH] LUA-090 Non-GMod Lua API (removed by the sandbox; foreign or probing code);;;These APIs are removed by the Garry's Mod sandbox, so this code cannot run as written. Either it was copied from elsewhere, or something is testing whether the sandbox is intact.;;;tags=not-gmod added=2025-12-03
+
+# --- Griefing and denial of service ---
+\bgame\.CleanUpMap\s*\(;;;[LOW] LUA-100 Map Cleanup;;;Standard in round-based gamemodes and admin tools.;;;tags=griefing added=2025-12-03 ref=https://wiki.facepunch.com/gmod/game.CleanUpMap
+(?:\bgame\.GetWorld\s*\(\s*\)|\bEntity\s*\(\s*0\s*\))\s*:\s*Remove;;;[HIGH] LUA-101 World Entity Removal (Server Crash);;;Removing entity 0, the world itself, crashes the server. There is no legitimate reason to do this.;;;tags=griefing added=2025-12-03 ref=https://wiki.facepunch.com/gmod/game.GetWorld
+\bEntity\s*\(\s*[1-9][0-9]*\s*\)\s*:\s*Remove;;;[LOW] LUA-102 Entity Removal by ID;;;Normal cleanup code.;;;tags=griefing added=2025-12-03
+\bplayer\.GetAll\s*\(\s*\)[\s\S]{0,200}?:Kick;;;[HIGH] LUA-103 Mass Player Kick;;;Kicks every player at once. Expected in an admin mod's kickall command, otherwise a griefing payload. Check what triggers it.;;;tags=griefing added=2025-12-03 ref=https://wiki.facepunch.com/gmod/player.GetAll
+\bplayer\.GetAll\s*\(\s*\)[\s\S]{0,200}?:Ban;;;[HIGH] LUA-104 Mass Player Ban;;;Bans every player at once. Admin mods have a legitimate command for this, which is why it is not conclusive on its own; check what triggers it and who is allowed to.;;;tags=griefing added=2025-12-03 ref=https://wiki.facepunch.com/gmod/player.GetAll
+
+# --- Self-concealment: code that hides itself or disables what would notice it ---
+\b(?:file\.(?:Find|Read|Exists|Write|Delete|IsDir)|util\.CRC|util\.MD5)\s*=\s*function;;;[CRITICAL] LUA-110 File API Overridden;;;A file function is replaced with a custom one. This is how a backdoor makes itself invisible to anything that lists or reads files, including this scanner. There is no legitimate reason for an addon to replace these.;;;added=2026-09-16 tags=concealment
+\b(?:RunString(?:Ex)?|CompileString|loadstring|hook\.Add|hook\.Call|hook\.Run|net\.Receive|concommand\.Add)\s*=\s*function;;;[CRITICAL] LUA-111 Core Function Overridden;;;A core engine function is replaced. Anything routed through it can then be filtered, logged or silently altered, which is how a backdoor intercepts or hides activity.;;;added=2026-09-16 tags=concealment
+\bhook\.GetTable\s*\(\s*\);;;[HIGH] LUA-112 Hook Table Enumeration;;;Reads the list of every registered hook. Debug tools do this; so does code that wants to find and remove another addon's protection.;;;added=2026-09-16 tags=concealment ref=https://wiki.facepunch.com/gmod/hook.GetTable
+\bhook\.Remove\s*\(;;;[LOW] LUA-113 Hook Removal;;;Routine when an addon cleans up its own hooks. Worth reading if the hook name belongs to something else, particularly an admin mod or anticheat.;;;added=2026-09-16 tags=concealment ref=https://wiki.facepunch.com/gmod/hook.Remove
+\bdebug\.getinfo\s*\(;;;[MEDIUM] LUA-114 Call Stack Inspection;;;Used by error handlers and profilers, and by code that wants to know who called it so it can behave differently when watched.;;;added=2026-09-16 tags=concealment ref=https://wiki.facepunch.com/gmod/debug.getinfo
+\btimer\.Remove\s*\(\s*["'][^"']*(?:[Aa]nti[-_]?[Cc]heat|[Aa]nti[-_]?[Cc]rash)[^"']*["'];;;[HIGH] LUA-115 Anticheat Timer Removed;;;Removes a timer whose name says it belongs to an anticheat. Addons remove their own timers constantly, so the name is the whole signal here: confirm the timer is not one this addon created.;;;added=2026-09-16 tags=concealment ref=https://wiki.facepunch.com/gmod/timer.Remove
+
+# --- Admin frameworks other than ULX ---
+\b(?:sam\.player\.(?:set_rank|add_rank)|serverguard\.player:SetRank|serverguard\.ranks|evolve\.ranks|maestro\.userrank|xAdmin\.SetUserRank|CAMI\.SignalUserGroupChanged);;;[HIGH] LUA-120 Admin Rank Change Through An Admin Mod API;;;Changes a player's rank through SAM, ServerGuard, Evolve, maestro, xAdmin or CAMI rather than through the admin menu. Expected inside that admin mod, suspicious anywhere else.;;;added=2026-09-16 tags=privilege,admin-mod
+\b(?:RunConsoleCommand|game\.ConsoleCommand)\s*\(\s*["\'](?:ulx|ulib)["\']\s*,\s*["\'](?:adduserid|adduser|addgroup|useradd|groupadd)["\'];;;[CRITICAL] LUA-121 Admin Rank Granted Through ULX Console Arguments;;;Calls ULX's own user-management command from Lua to put somebody in a group. This is the single most common payload in real Garry's Mod backdoors: one line, no obfuscation, and the server hands out superadmin on its own. A legitimate addon does not manage ranks for you. Read which SteamID is named and which group it gets.;;;tags=privilege,admin added=2026-09-16
+\bULib\.unban\s*\(\s*["\']|\b(?:RunConsoleCommand|game\.ConsoleCommand)\s*\(\s*["\'](?:ulx|ulib)["\']\s*,\s*["\']unban["\'];;;[HIGH] LUA-122 Ban Lifted From Code;;;Removes a ban without anyone asking. Paired with a hardcoded SteamID this is how an operator keeps their way back in after being thrown off the server.;;;tags=privilege,persistence added=2026-09-16
+\bIs(?:Super)?Admin\s*\(\s*\)\s*(?:or|\|\|)\s*[\w.]*[:.]\s*SteamID(?:64)?\s*\(\s*\)\s*==\s*["\']|[\w.]*[:.]\s*SteamID(?:64)?\s*\(\s*\)\s*==\s*["\'][^"\']{6,}["\']\s*(?:or|\|\|)\s*[\w.]*[:.]\s*Is(?:Super)?Admin\s*\(\s*\);;;[CRITICAL] LUA-132 Admin Check Widened By A Hardcoded SteamID;;;An admin check with a specific SteamID bolted onto it with `or`. Everything the check was guarding is now open to that one account as well, and the code reads as if it still checks for admin. Whoever that ID belongs to has admin rights on this server without appearing in any admin list.;;;tags=privilege,concealment added=2026-09-16
+
+# --- Inverted permission checks ---
+\bif\s+not\s+[\w.]+[:.]Is(?:Super)?Admin\s*\([^)]{0,40}\)\s*then(?:(?!\bend\b|\breturn\b)[\s\S]){0,250}?\b(?:RunString(?:Ex)?|CompileString|SetUserGroup|ConCommand|BroadcastLua|SendLua);;;[CRITICAL] LUA-130 Inverted Admin Check Guarding A Dangerous Action;;;The dangerous branch runs when the player is *not* an admin. A real permission check is the other way round: it stops non-admins. This one lets everyone else through.;;;added=2026-09-16 tags=privilege
+\bif\s+[\w.]+[:.]SteamID(?:64)?\s*\(\s*\)\s*~=\s*["'];;;[MEDIUM] LUA-131 Negated SteamID Comparison;;;Behaviour that applies to everyone except one specific account. In an owner configuration the comparison is normally the other way round.;;;added=2026-09-16 tags=privilege
+\b(?:ents\.Create\s*\(\s*["\']env_explosion["\']|[\w.]+:Fire\s*\(\s*["\']Explode["\']);;;[MEDIUM] LUA-135 Explosive Created And Detonated From Code;;;Spawns an explosion on demand. Every grenade and rocket in the game does this, so on its own it says very little; it is here because COMP-027 needs it. What matters is a file that both explodes things and names specific accounts.;;;tags=griefing added=2026-09-16
+\bhook\.Add\s*\(\s*["\'](?:PlayerKick|PlayerBan|PlayerShouldBeKicked|CanPlayerBan)["\'];;;[HIGH] LUA-136 Moderation Event Hooked;;;Hooks the moment a player is kicked or banned. A hook there can return false and stop it. Whoever runs this cannot be removed from the server by the usual means, which is the first thing a backdoor operator wants. Read whether the handler returns false, and for whom.;;;tags=concealment,persistence added=2026-09-16
+\bconcommand\.Add\s*\(\s*["\'](?:bs_scan|bs_scan_full|nomalua_scan|braxscan|gac_checkbackdoors|cpe_menu|bd_scan|antibackdoor|backdoor_scan)\b;;;[CRITICAL] LUA-137 Console Command Of A Security Addon Registered;;;Registers a console command under the name a backdoor scanner or anticheat uses for its own scan. Whoever types that command gets this handler instead of the tool they meant to run, and it can quietly do nothing. There is exactly one reason to write this: so the next person who checks the server is told everything is fine.;;;tags=concealment added=2026-09-16
+\bconcommand\.Remove\s*\(\s*["\'];;;[HIGH] LUA-138 Console Command Removed;;;Deletes a console command. An addon tidying up its own command on reload is fine; removing somebody else's takes a tool away from whoever administers the server. Check which command is named and who owns it.;;;tags=concealment added=2026-09-16
+\brender\.Capture(?:Pixels)?\b;;;[MEDIUM] LUA-139 Client Screen Captured;;;Takes a picture of what the player sees. Screenshot addons and anticheats do this openly and with consent; the same call feeding a network message is surveillance of everyone who joins. Follow where the image goes.;;;tags=exfiltration added=2026-09-16
+
+# --- Time-delayed activation ---
+\bos\.time\s*\(\s*\)\s*(?:>=?|<=?)\s*\d{9,};;;[HIGH] LUA-140 Time-Based Trigger;;;Compares the current time against a fixed timestamp, so the code behaves differently before and after a chosen date. A backdoor that sleeps until after the addon has been reviewed uses exactly this.;;;added=2026-09-16 tags=delayed ref=https://wiki.facepunch.com/gmod/os.time
+
+# --- Persistence ---
+\bsql\.(?:Query|QueryValue|QueryRow)\s*\([\s\S]{0,300}?\b(?:RunString(?:Ex)?|CompileString|loadstring)\b|\b(?:RunString(?:Ex)?|CompileString|loadstring)\s*\([\s\S]{0,200}?\bsql\.(?:Query|QueryValue|QueryRow);;;[CRITICAL] LUA-150 Code Stored In Or Loaded From The Database;;;Executable code travels through the SQL database. Deleting the addon file does not remove it; the payload comes back from the database on the next start.;;;added=2026-09-16 tags=persistence
+\bfile\.Write\s*\([\s\S]{0,250}?\bresource\.AddFile|\bresource\.AddFile\s*\([\s\S]{0,250}?\bfile\.Write;;;[MEDIUM] LUA-151 File Written And Served To Clients;;;A file is created at runtime and then sent to connecting clients. Legitimate for generated content; also how a client-side payload gets distributed without shipping it in the addon.;;;added=2026-09-16 tags=persistence ref=https://wiki.facepunch.com/gmod/file.Write
+\bAddCSLuaFile\s*\(\s*["'](?:data/|\.\./|/)[^"']*["'];;;[HIGH] LUA-152 Client Lua Sent From An Unusual Path;;;Client Lua is normally sent from the addon's own lua/ directory. A path pointing at data/ or outside the addon suggests the file was written at runtime rather than shipped.;;;added=2026-09-16 tags=persistence ref=https://wiki.facepunch.com/gmod/Global.AddCSLuaFile
+
+# --- SQL injection ---
+\bsql\.(?:Query|QueryValue|QueryRow)\s*\([\s\S]{0,200}?\.\.(?!\s*(?:(?:\w+\.)?SQLStr\b|["'\[]));;;[MEDIUM] LUA-153 SQL Query Built By Concatenation;;;A value that is neither a literal nor wrapped in an SQLStr escaping call is concatenated into a query. Concatenating literals is fine and so is sql.SQLStr, which escapes properly; this fires only on the raw value in between. It matters when that value comes from a player.;;;tags=sql added=2025-12-03
+
+# --- Exfiltration of identity and credentials ---
+\bSteamID(?:64)?\s*\(\s*\)[\s\S]{0,250}?\bhttp\.(?:Post|Fetch)|\bhttp\.(?:Post|Fetch)\s*\([\s\S]{0,250}?\bSteamID(?:64)?\s*\(\s*\);;;[HIGH] LUA-160 Player Identity Sent To A Remote Host;;;Player SteamIDs leave the server. Some legitimate statistics and ban-sharing addons do this; confirm the destination belongs to a service you chose, and that nothing else is bundled with it.;;;added=2026-09-16 tags=exfiltration
+\butil\.Base64Encode\s*\([\s\S]{0,250}?\bhttp\.(?:Post|Fetch)|\bhttp\.(?:Post|Fetch)\s*\([\s\S]{0,250}?\butil\.Base64Encode;;;[MEDIUM] LUA-161 Encoded Data Sent Outbound;;;Data is encoded immediately before being sent. Encoding is not encryption and adds nothing over HTTPS, so its purpose here is usually to stop the payload being readable in a log.;;;added=2026-09-16 tags=exfiltration
+\bsystem\.(?:SteamID|OS|IsWindows|IsLinux)\s*\(|\bgame\.GetIPAddress\s*\(;;;[MEDIUM] LUA-162 Host Or Client Fingerprinting;;;Collects information about the machine. Used by legitimate diagnostics, and by payloads deciding whether the target is worth activating on.;;;added=2026-09-16 tags=exfiltration ref=https://wiki.facepunch.com/gmod/game.GetIPAddress
+
+# --- Economy abuse (DarkRP and similar) ---
+:addMoney\s*\(\s*-?\d{6,}|:setDarkRPVar\s*\(\s*["']money["']\s*,\s*-?\d{6,};;;[HIGH] LUA-170 Large Currency Change;;;A very large amount of in-game currency is granted or removed in code. Check what triggers it and who it applies to.;;;tags=darkrp added=2026-09-16
+\bDarkRP\.createEntity\s*\([\s\S]{0,200}?(?:RunString|CompileString);;;[CRITICAL] LUA-171 Code Execution Wired Into A DarkRP Entity;;;A purchasable entity runs code when used. Anyone able to buy or spawn it can trigger it.;;;tags=darkrp added=2026-09-16
+
+# --- Persistence in autorun specifically ---
+\bfile\.Write\s*\(;;;[MEDIUM] LUA-180 File Written From Autorun;;;Writing files during startup, from a directory that runs automatically. Legitimate for caches and configuration; also how a payload re-establishes itself after being removed.;;;path=*/lua/autorun/* added=2026-09-16 tags=persistence ref=https://wiki.facepunch.com/gmod/file.Write
+
+# --- Obfuscation: bytecode and compressed payloads ---
+\x1bLua|\x1bLJ|\bLuaQ\b|\\27Lua|\\x1bLua|\\027Lua|\\27LJ|\\x1bLJ;;;[CRITICAL] LUA-182 Lua Bytecode Header In A Source File;;;A Lua or LuaJIT bytecode signature sitting in a .lua file. Bytecode cannot be read, which is the entire reason to ship it: whatever it does is invisible to you and to this scanner. Nothing legitimate needs it.;;;added=2026-09-16 tags=obfuscation
+\butil\.Decompress\s*\([\s\S]{0,300}?\b(?:RunString(?:Ex)?|CompileString|loadstring)\s*\(|\b(?:RunString(?:Ex)?|CompileString|loadstring)\s*\([\s\S]{0,300}?\butil\.Decompress\s*\(;;;[CRITICAL] LUA-183 Compressed Payload Executed;;;Decompresses a blob and runs the result as code. The compression is there so you cannot read the payload; a legitimate addon compresses data it is about to send, not code it is about to run.;;;added=2026-09-16 tags=obfuscation ref=https://wiki.facepunch.com/gmod/util.Decompress
+\bstring\.dump\s*\(;;;[HIGH] LUA-184 Bytecode Produced From A Function;;;Turns a live function back into bytecode. Used by a handful of serialisation libraries, and by code preparing an unreadable payload to store or send.;;;added=2026-09-16 tags=obfuscation ref=https://wiki.facepunch.com/gmod/string.dump
+\bjit\.(?:util|attach|dump)\b;;;[HIGH] LUA-185 LuaJIT Internals Accessed;;;Reaches into LuaJIT's own machinery: reading the bytecode of functions, or getting a callback on every function compiled. Profilers do this; so does code inspecting or rewriting other addons from the inside.;;;added=2026-09-16 tags=obfuscation
+\butil\.Decompress\s*\(\s*(?:util\.Base64Decode|'|\");;;[HIGH] LUA-186 Compressed Literal Blob;;;Decompresses a string written directly into the file. Whatever comes out cannot be reviewed by reading the source. Worth following to see what is done with the result.;;;added=2026-09-16 tags=obfuscation ref=https://wiki.facepunch.com/gmod/util.Decompress
+\bsound\.PlayURL\s*\(;;;[LOW] LUA-187 Audio Streamed From A URL;;;Plays audio from a web address on a client. Normal for radio and music addons; in anything else it is a way to reach an outside server from a player's machine.;;;added=2026-09-16 tags=obfuscation ref=https://wiki.facepunch.com/gmod/sound.PlayURL

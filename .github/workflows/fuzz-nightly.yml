@@ -1,0 +1,91 @@
+name: fuzz-nightly
+
+# The 30-second run in build.yml is a smoke test. This one runs long enough to
+# find things, and keeps its corpus between runs so coverage accumulates instead
+# of starting from the seeds every night.
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: 'Seconds per target'
+        required: false
+        default: '600'
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Restore corpus
+        id: corpus
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            fuzz-out/lzma/corpus
+            fuzz-out/gma/corpus
+            fuzz-out/scanner/corpus
+            fuzz-out/names/corpus
+            fuzz-out/cli/corpus
+            fuzz-out/rules/corpus
+          key: fuzz-corpus-${{ github.run_id }}
+          restore-keys: fuzz-corpus-
+
+      - name: Corpus size on entry
+        run: |
+          for t in lzma gma scanner names cli rules; do
+            n=$(ls -1 "fuzz-out/$t/corpus" 2>/dev/null | wc -l)
+            echo "$t: $n files"
+          done
+
+      - name: Fuzz
+        env:
+          CXX: clang++
+          FUZZ_MINIMIZE: '1'
+        run: bash BD-Scan/tests/fuzz/run.sh "${{ github.event.inputs.seconds || 600 }}" fuzz-out
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "| Target | Corpus | Coverage | Execs |"
+            echo "|---|---|---|---|"
+            for t in lzma gma scanner names cli rules; do
+              files=$(ls -1 "fuzz-out/$t/corpus" 2>/dev/null | wc -l)
+              done_line=$(grep -E '^#[0-9]+\s+DONE' "fuzz-out/$t/run.log" 2>/dev/null | tail -1)
+              cov=$(echo "$done_line" | grep -oE 'cov: [0-9]+' | cut -d' ' -f2)
+              execs=$(grep -oE 'number_of_executed_units: *[0-9]+' "fuzz-out/$t/run.log" 2>/dev/null | grep -oE '[0-9]+$')
+              echo "| $t | ${files:-0} | ${cov:-n/a} | ${execs:-n/a} |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save corpus
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            fuzz-out/lzma/corpus
+            fuzz-out/gma/corpus
+            fuzz-out/scanner/corpus
+            fuzz-out/names/corpus
+            fuzz-out/cli/corpus
+            fuzz-out/rules/corpus
+          key: fuzz-corpus-${{ github.run_id }}
+
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fuzz-crashes
+          path: |
+            fuzz-out/*/artifacts/
+            fuzz-out/*/run.log
+          if-no-files-found: warn
+          retention-days: 90

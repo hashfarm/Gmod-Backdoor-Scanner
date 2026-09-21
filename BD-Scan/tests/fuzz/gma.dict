@@ -1,0 +1,28 @@
+# libFuzzer dictionary for fuzz_gma: GMA header fields and the shapes the
+# parser validates. Byte values are the little-endian encodings the format uses.
+
+magic="GMAD"
+version_1="\x01"
+version_3="\x03"
+terminator="\x00"
+
+zero_u32="\x00\x00\x00\x00"
+one_u32="\x01\x00\x00\x00"
+two_u32="\x02\x00\x00\x00"
+huge_u32="\xff\xff\xff\xff"
+
+zero_i64="\x00\x00\x00\x00\x00\x00\x00\x00"
+small_i64="\x10\x00\x00\x00\x00\x00\x00\x00"
+negative_i64="\xff\xff\xff\xff\xff\xff\xff\xff"
+absurd_i64="\x00\x00\x00\x00\x00\x01\x00\x00"
+
+lua_path="lua/autorun/init.lua\x00"
+server_path="lua/autorun/server/sv_init.lua\x00"
+material_path="materials/example.vmt\x00"
+texture_path="materials/example.vtf\x00"
+font_path="resource/fonts/example.ttf\x00"
+model_path="models/example.mdl\x00"
+no_extension="readme\x00"
+
+addon_name="Test Addon\x00"
+empty_string="\x00"

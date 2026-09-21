@@ -1,0 +1,42 @@
+# Test cases for module_patterns.txt, executed by the self-check and by CI.
+# Snippets are scanned as the printable strings pulled out of a .dll, one per
+# line, so they read like strings and not like code. Same format as
+# lua_patterns.test.txt.
+#
+# The negatives are what really does sit in the string table of an ordinary
+# Garry's Mod binary module: Lua symbol names, compiler and library banners,
+# build paths and the homepage of whatever it links against.
+
++ MOD-010 ;;; http://gpwn.zapto.org:1337/raw.lua
++ MOD-010 ;;; https://example.org/payload/stage2.lua
+- MOD-010 ;;; https://github.com/someone/gm_module
+- MOD-010 ;;; loadstring
+
++ MOD-011 ;;; http://192.168.1.50:8080/c2
++ MOD-011 ;;; https://203.0.113.9/panel
+- MOD-011 ;;; https://api.example.com/v1
+
++ MOD-012 ;;; https://pastebin.com/raw/AbCdEf12
++ MOD-012 ;;; http://bit.ly/2xKq9
+- MOD-012 ;;; https://paste-service.internal/doc
+
++ MOD-013 ;;; https://discord.com/api/webhooks/1234/abcd
++ MOD-013 ;;; https://discordapp.com/api/webhooks/9/zz
+- MOD-013 ;;; https://discord.com/invite/abcdef
+
++ MOD-014 ;;; panel.zapto.org
++ MOD-014 ;;; my-control.ddns.net
+- MOD-014 ;;; cdn.example.org
+
++ MOD-015 ;;; STEAM_0:1:33966080
+- MOD-015 ;;; STEAM_0:1:7
+- MOD-015 ;;; steamworks_init
+
++ MOD-016 ;;; https://curl.se/docs/copyright.html
+- MOD-016 ;;; GCC: (GNU) 4.8.4
+- MOD-016 ;;; /home/build/module/src/main.cpp
+- MOD-016 ;;; _ZN4lua_State
+- MOD-016 ;;; RunString
+
++ MOD-017 ;;; QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODkQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODkQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODkQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODkQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODkQUJDREVGR0hJSktM
+- MOD-017 ;;; YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXo=

@@ -1,0 +1,35 @@
+# Test cases for data_patterns.txt, executed by the self-check and by CI.
+# Snippets are scanned as .txt content at a path inside data/. Same format as
+# lua_patterns.test.txt.
+#
+# The negatives are what a well-behaved addon really does leave in data/:
+# settings, saved positions, serialised tables. None of it is code.
+
++ DATA-001 ;;; RunString(payload)
++ DATA-001 ;;; local f = loadstring(blob) f()
+- DATA-001 ;;; {"volume":0.8,"lastmap":"gm_construct"}
+- DATA-001 ;;; playermodel=models/player/kleiner.mdl
+
++ DATA-002 ;;; \27Lua\81\0\1\4
++ DATA-002 ;;; header \x1bLJ\2\0
+- DATA-002 ;;; name=Lua Tutorial Server
+
++ DATA-003 ;;; hook.Add("PlayerSay", "x", function(p, t) end)
++ DATA-003 ;;; net.Receive("cmd", handler)
++ DATA-003 ;;; timer.Create("beacon", 60, 0, ping)
+- DATA-003 ;;; hooks_enabled=1
+- DATA-003 ;;; {"timers":{"respawn":30}}
+
++ DATA-004 ;;; http.Fetch("http://example.com/p", RunString)
++ DATA-004 ;;; http.Post(url, {id = sid})
+- DATA-004 ;;; {"url":"https://example.com/rules"}
+
++ DATA-005 ;;; QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODkQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODkQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODkQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODkQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODkQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODkQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVphYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ejAxMjM0NTY3ODkQUJDREVGR0hJSktMTU5=
+- DATA-005 ;;; {"token":"YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXo="}
+
++ DATA-006 ;;; \x52\x75\x6e\x53\x74\x72
+- DATA-006 ;;; color=\x1b
+
++ DATA-007 ;;; file.Write("data/x.txt", blob)
++ DATA-007 ;;; file.Append(path, chunk)
+- DATA-007 ;;; {"writes":42}

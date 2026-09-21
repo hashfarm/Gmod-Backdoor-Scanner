@@ -1,0 +1,206 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x64
+
+      - name: Build scanner
+        run: msbuild BD-Scan.sln /t:Build /p:Configuration=Release /p:Platform=x64 /v:minimal
+
+      - name: Build self-check
+        run: cl /nologo /std:c++17 /EHsc /W4 /WX /I BD-Scan BD-Scan\tests\selfcheck.cpp /Fe:selfcheck.exe
+
+      - name: Run self-check, pattern tests and corpus metrics
+        run: .\selfcheck.exe BD-Scan
+
+      - name: Integration regressions
+        run: python BD-Scan/tests/integration.py ./x64/Release/BD-Scan.exe BD-Scan
+
+      - name: Evasion attempts
+        run: python BD-Scan/tests/evasion.py ./x64/Release/BD-Scan.exe BD-Scan
+
+      - name: Real published Garry's Mod code
+        shell: bash
+        run: bash BD-Scan/tests/real_corpus.sh ./x64/Release/BD-Scan.exe "$RUNNER_TEMP/real-corpus"
+
+      - name: Real Garry's Mod backdoors
+        shell: bash
+        run: bash BD-Scan/tests/malicious_corpus.sh ./x64/Release/BD-Scan.exe "$RUNNER_TEMP/malicious-corpus"
+
+      - name: The same backdoors written differently
+        shell: bash
+        run: python BD-Scan/tests/metamorphic.py ./x64/Release/BD-Scan.exe BD-Scan "$RUNNER_TEMP/malicious-corpus/src"
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build with CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+
+      - name: Self-check, integration and evasion suites
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Real published Garry's Mod code
+        run: bash BD-Scan/tests/real_corpus.sh ./build/bd-scan "$RUNNER_TEMP/real-corpus"
+
+      - name: Real Garry's Mod backdoors
+        run: bash BD-Scan/tests/malicious_corpus.sh ./build/bd-scan "$RUNNER_TEMP/malicious-corpus"
+
+      - name: The same backdoors written differently
+        run: python3 BD-Scan/tests/metamorphic.py ./build/bd-scan BD-Scan "$RUNNER_TEMP/malicious-corpus/src"
+
+      - name: Real code under AddressSanitizer and UndefinedBehaviorSanitizer
+        run: |
+          clang++ -std=c++17 -O1 -g -fsanitize=address,undefined \
+            -fno-sanitize-recover=all -fno-omit-frame-pointer -pthread \
+            -I BD-Scan $(ls BD-Scan/*.cpp) -o bd-scan-asan
+
+          # The fuzzers feed it inputs nobody ever wrote; the corpora feed it
+          # what people actually publish, which reaches different code.
+          # Leak detection is off: a leak in a process that exits after one scan
+          # is not what this step is for, and the noise would bury a real report.
+          set +e
+          ASAN_OPTIONS=detect_leaks=0:abort_on_error=0 \
+          UBSAN_OPTIONS=print_stacktrace=1 \
+            ./bd-scan-asan -d "$RUNNER_TEMP/real-corpus/src" -o asan-out \
+              --rules BD-Scan -q --html --sarif --cache asan-cache.json \
+              > asan.log 2>&1
+          benign=$?
+          ASAN_OPTIONS=detect_leaks=0:abort_on_error=0 \
+          UBSAN_OPTIONS=print_stacktrace=1 \
+            ./bd-scan-asan -d "$RUNNER_TEMP/malicious-corpus/src" -o asan-out \
+              --rules BD-Scan -q --html --sarif --cache asan-cache.json \
+              >> asan.log 2>&1
+          malicious=$?
+          set -e
+
+          if grep -qE "ERROR: AddressSanitizer|runtime error:|LeakSanitizer" asan.log; then
+            echo "::error::a sanitizer reported a problem on real code"
+            cat asan.log
+            exit 1
+          fi
+          for status in $benign $malicious; do
+            if [ "$status" -ne 0 ] && [ "$status" -ne 1 ] && [ "$status" -ne 3 ]; then
+              echo "::error::scanner exited with unexpected status $status under the sanitizers"
+              cat asan.log
+              exit 1
+            fi
+          done
+          echo "no sanitizer findings (exit $benign and $malicious)"
+
+      - name: Data races (ThreadSanitizer)
+        run: |
+          clang++ -std=c++17 -O1 -g -fsanitize=thread -pthread -I BD-Scan $(ls BD-Scan/*.cpp) -o bd-scan-tsan
+          cp BD-Scan/*_patterns.txt BD-Scan/composite_rules.txt BD-Scan/whitelist.txt BD-Scan/known_hashes.txt .
+
+          # The thread pool only does useful work with more files than cores.
+          mkdir -p /tmp/race
+          for i in $(seq 1 400); do
+            cat BD-Scan/tests/fixtures/malicious/backdoor.lua > /tmp/race/f$i.lua
+            printf 'RunConsoleCommand("say","x")\nfile.Delete("a")\ngetfenv(1)\n' >> /tmp/race/f$i.lua
+          done
+          python3 BD-Scan/tests/make_workshop_gma.py /tmp/race/addon.gma
+          cp BD-Scan/tests/fixtures/clean/addon.lua /tmp/race/clean.lua
+
+          # Native modules and runtime data files take their own paths through the
+          # worker pool, so give the race detector something to do on both.
+          mkdir -p /tmp/race/lua/bin /tmp/race/data
+          for i in $(seq 1 40); do
+            printf 'MZ\0\0http://panel.zapto.org:1337/raw.lua\0STEAM_0:1:33966080\0' \
+              > /tmp/race/lua/bin/gmsv_mod$i_linux64.dll
+            printf 'RunString(payload)\n' > /tmp/race/data/blob$i.txt
+          done
+
+          # The scanner exits 1 because it finds things; only a TSan report is a failure,
+          # so match on the report itself rather than on the exit code.
+          set +e
+          TSAN_OPTIONS="halt_on_error=1 second_deadlock_stack=1 exitcode=86" \
+            ./bd-scan-tsan -d /tmp/race -q --html --sarif --cache /tmp/race-cache.json \
+            > tsan.log 2>&1
+          status=$?
+
+          # A second run exercises the cache-hit path, which replays findings from
+          # every worker thread instead of producing them.
+          TSAN_OPTIONS="halt_on_error=1 second_deadlock_stack=1 exitcode=86" \
+            ./bd-scan-tsan -d /tmp/race -q --cache /tmp/race-cache.json >> tsan.log 2>&1
+          set -e
+
+          if grep -q "WARNING: ThreadSanitizer" tsan.log; then
+            echo "::error::ThreadSanitizer reported a data race"
+            cat tsan.log
+            exit 1
+          fi
+          if [ "$status" -eq 86 ]; then
+            echo "::error::ThreadSanitizer aborted the run"
+            cat tsan.log
+            exit 1
+          fi
+          if [ "$status" -ne 1 ] && [ "$status" -ne 3 ]; then
+            echo "::error::scanner exited with unexpected status $status under TSan"
+            cat tsan.log
+            exit 1
+          fi
+          echo "no data races reported (scanner exit $status)"
+
+      - name: Fuzz smoke (30 s per target, ASan + UBSan)
+        env:
+          CXX: clang++
+        run: bash BD-Scan/tests/fuzz/run.sh 30 fuzz-out
+
+      - name: Keep crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fuzz-artifacts
+          path: |
+            fuzz-out/*/artifacts/
+            fuzz-out/*/run.log
+          if-no-files-found: ignore
+
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Both Mac architectures. The release ships one universal binary, and a
+        # slice only proves it works by running on the hardware it targets.
+        runner: [macos-latest, macos-15-intel]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build with CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+          cmake --build build
+          lipo -archs build/bd-scan
+
+      - name: Self-check, integration and evasion suites
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Real published Garry's Mod code
+        run: bash BD-Scan/tests/real_corpus.sh ./build/bd-scan "$RUNNER_TEMP/real-corpus"
+
+      - name: Real Garry's Mod backdoors
+        run: bash BD-Scan/tests/malicious_corpus.sh ./build/bd-scan "$RUNNER_TEMP/malicious-corpus"
+
+      - name: The same backdoors written differently
+        run: python3 BD-Scan/tests/metamorphic.py ./build/bd-scan BD-Scan "$RUNNER_TEMP/malicious-corpus/src"

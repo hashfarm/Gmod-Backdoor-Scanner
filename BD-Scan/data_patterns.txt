@@ -1,0 +1,22 @@
+# Patterns for the folders Garry's Mod itself writes to at runtime.
+# Format: regex;;;[SEVERITY] ID Description;;;Optional hint;;;attributes
+#
+# data/, cache/ and download/ hold what the game and its addons wrote while the
+# server was running, not what the addon author shipped. Nothing in a released
+# addon puts code there, so a payload parked in data/payload.txt and loaded back
+# with file.Read is a standard way to keep the executable half out of the .lua
+# files anyone reviews.
+#
+# file.Write only accepts a short list of extensions, which is why these rules
+# cover .txt, .dat and .json rather than .lua. Every rule is path-scoped: the
+# same content in an addon's own config .txt is not what this file is about.
+#
+# Every ID has test cases in data_patterns.test.txt.
+
+\b(?:RunString(?:Ex)?|CompileString|loadstring)\s*\(;;;[CRITICAL] DATA-001 Execution Primitive In A Runtime Data File;;;Lua that calls an execution primitive, sitting in a folder the game writes to. The addon that shipped did not put this here; something wrote it while the server was running. Find the file.Read or file.Open that loads it back.;;;path=*/data/*,data/*,*/cache/*,cache/*,*/download/*,download/*,*/downloads/*,downloads/*,*/lua_temp/*,lua_temp/* tags=execution added=2026-09-16
+\x1bLua|\x1bLJ|\\27Lua|\\x1bLua|\\027Lua|\\27LJ|\\x1bLJ;;;[CRITICAL] DATA-002 Lua Bytecode In A Runtime Data File;;;Compiled Lua bytecode written into a data file. Bytecode cannot be read, and there is no legitimate reason for an addon to keep any there. Whatever loads this file is running code nobody has reviewed.;;;path=*/data/*,data/*,*/cache/*,cache/*,*/download/*,download/*,*/downloads/*,downloads/*,*/lua_temp/*,lua_temp/* tags=obfuscation,execution added=2026-09-16
+\b(?:hook\.Add|net\.Receive|concommand\.Add|timer\.Create)\s*\(\s*["'];;;[HIGH] DATA-003 Game API Calls In A Runtime Data File;;;A data file containing calls into the Garry's Mod API. Configuration and saved state are values, not code. This file is a script that something loads and runs.;;;path=*/data/*,data/*,*/cache/*,cache/*,*/download/*,download/*,*/downloads/*,downloads/*,*/lua_temp/*,lua_temp/* tags=execution added=2026-09-16
+\bhttp\.(?:Fetch|Post)\s*\(|\bHTTP\s*\(\s*\{;;;[HIGH] DATA-004 Outbound Request Code In A Runtime Data File;;;Network code stored in a data file. Read where the request goes and what it carries before deciding this is harmless.;;;path=*/data/*,data/*,*/cache/*,cache/*,*/download/*,download/*,*/downloads/*,downloads/*,*/lua_temp/*,lua_temp/* tags=remote,network added=2026-09-16
+[A-Za-z0-9+/]{512,8000}={0,2};;;[HIGH] DATA-005 Large Encoded Blob In A Runtime Data File;;;Half a kilobyte or more of Base64 in a folder the game writes to. Saved settings do not look like this. If a .lua file elsewhere reads this path and decodes it, the two halves together are a loader and its payload.;;;path=*/data/*,data/*,*/cache/*,cache/*,*/download/*,download/*,*/downloads/*,downloads/*,*/lua_temp/*,lua_temp/* tags=obfuscation added=2026-09-16
+\\x[0-9a-fA-F]{2}\\x[0-9a-fA-F]{2}\\x[0-9a-fA-F]{2}\\x[0-9a-fA-F]{2};;;[MEDIUM] DATA-006 Hex Escape Run In A Runtime Data File;;;Text written as hex escapes in a data file. The escapes are a source-level construct: something wrote Lua here, not data.;;;path=*/data/*,data/*,*/cache/*,cache/*,*/download/*,download/*,*/downloads/*,downloads/*,*/lua_temp/*,lua_temp/* tags=obfuscation added=2026-09-16
+\bfile\.Write\s*\(|\bfile\.Append\s*\(;;;[MEDIUM] DATA-007 File Writing Code In A Runtime Data File;;;A data file that itself contains file-writing code. This is how a payload re-establishes itself after someone deletes the copy they found.;;;path=*/data/*,data/*,*/cache/*,cache/*,*/download/*,download/*,*/downloads/*,downloads/*,*/lua_temp/*,lua_temp/* tags=persistence added=2026-09-16

@@ -1,0 +1,181 @@
+# CRITICAL findings that real, published Garry's Mod code is expected to
+# produce. Everything here is a true positive: the construct really is in the
+# file. They are listed rather than suppressed because a scanner that stays
+# silent about RunString has stopped being a scanner.
+#
+# They fall into two groups. The first is stock game files and an admin mod's own
+# privilege machinery. The second is three addons that run code on purpose --
+# Starfall is a Lua sandbox, Wiremod's Expression 2 compiles chips, PAC3 builds
+# parts from strings -- and every CRITICAL in them is the scanner correctly
+# noticing that. A server owner who sees these in a scan has learned something
+# true: this server can run code that did not ship with it.
+#
+# Format: <pattern id> <path below the checkout root>
+# Adding a line here is a claim that you looked at the code and it is fine.
+# real_corpus.sh fails on any CRITICAL that is not listed.
+#
+# CRITICAL findings are listed one by one above. Everything else is budgeted per
+# rule instead, in the profile section at the end: how many findings a rule may
+# produce on this corpus, and across how many files. A single ceiling over all
+# HIGH findings used to do that job, but it could not say which rule had grown,
+# and it went up every time a new rule was added for an unrelated reason.
+#
+# A rule that fires here at all needs a budget line. That is deliberate: writing
+# one is the moment to look at what it matched and decide the rule is right.
+
+# lua_run is the entity whose entire purpose is running Lua a mapper typed in.
+LUA-001 garrysmod/garrysmod/gamemodes/base/entities/entities/lua_run.lua
+
+# The main menu and the HTML panel run Lua the engine itself supplies.
+LUA-001 garrysmod/garrysmod/lua/menu/mainmenu.lua
+LUA-001 garrysmod/garrysmod/lua/vgui/dhtml.lua
+
+# ULX's rcon command runs what a superadmin typed, which is what rcon is.
+LUA-001 ulx/lua/ulx/modules/sh/rcon.lua
+
+# The engine's own auth code assigns the listen-server host to superadmin.
+LUA-040 garrysmod/garrysmod/lua/includes/extensions/player_auth.lua
+
+# DarkRP's error library compiles a file on purpose, to turn a syntax error into
+# a readable message instead of a stack trace.
+LUA-002 darkrp/gamemode/libraries/simplerr.lua
+
+# DarkRP really does enable sv_allowcslua on startup, unless the owner sets
+# Config.disallowClientsideScripts. This is a true positive and arguably the
+# most useful finding in the whole corpus: a server owner running DarkRP should
+# know that clients may run their own Lua by default. It is listed rather than
+# suppressed because the rule is right.
+LUA-044 darkrp/gamemode/modules/base/sv_gamemode_functions.lua
+
+# ULX's own admin panel. This is the XGUI screen where an admin clicks a player
+# and picks a group, so it really does call "ulx adduserid" -- with values read
+# out of the UI, not with a SteamID written into the file. That distinction is
+# what COMP-024 tests, and COMP-024 correctly stays quiet here. Every backdoor
+# in the malicious corpus that uses this call hardcodes the ID instead.
+LUA-121 ulx/lua/ulx/xgui/groups.lua
+
+# Starfall is a sandbox for user-written Lua. Compiling a string is not a smell
+# here, it is the product: the editor validates, the instance loads, and the
+# library hands the compiled chunk back. It reads files from data/ for the same
+# reason, which is why LUA-008 and the loader composite fire too.
+LUA-002 StarfallEx/lua/starfall/editor/sfframe.lua
+LUA-002 StarfallEx/lua/starfall/instance.lua
+LUA-002 StarfallEx/lua/starfall/libs_sh/builtins.lua
+LUA-002 StarfallEx/lua/starfall/permissions/providers_sh/url_whitelist.lua
+LUA-002 StarfallEx/lua/starfall/sflib.lua
+LUA-003 StarfallEx/lua/starfall/libs_sh/builtins.lua
+LUA-008 StarfallEx/lua/starfall/permissions/providers_sh/url_whitelist.lua
+LUA-008 StarfallEx/lua/starfall/sflib.lua
+COMP-010 StarfallEx
+
+# Expression 2 and the Wire CPU are compilers with an editor attached. The E2
+# test runner and the extension loader compile what they are given, and cpulib
+# and the virtual machine assemble and run it.
+LUA-002 wire/lua/entities/gmod_wire_expression2/core/e2tests.lua
+LUA-002 wire/lua/entities/gmod_wire_expression2/core/extloader.lua
+LUA-002 wire/lua/wire/cpulib.lua
+LUA-002 wire/lua/wire/zvm/zvm_core.lua
+LUA-008 wire/lua/entities/gmod_wire_expression2/core/e2tests.lua
+
+# PAC3 builds outfit parts out of strings the wearer wrote: a command part, a
+# script part, an expression library. Its data library serialises tables by
+# compiling them back, and the editor reads and compiles tool files.
+LUA-001 pac3/lua/pac3/editor/client/tools.lua
+LUA-002 pac3/lua/autorun/pac_restart.lua
+LUA-002 pac3/lua/pac3/core/client/parts/command.lua
+LUA-002 pac3/lua/pac3/core/client/parts/script.lua
+LUA-002 pac3/lua/pac3/editor/client/language.lua
+LUA-002 pac3/lua/pac3/libraries/expression.lua
+LUA-002 pac3/lua/pac3/libraries/luadata.lua
+LUA-002 pac3/lua/pac3/libraries/webaudio.lua
+LUA-002 pac3/lua/pac3/libraries/webaudio/stream.lua
+LUA-008 pac3/lua/autorun/pac_restart.lua
+# PAC3's sound part defines its own local function called load and calls
+# it twice. LUA-188 reads any load( as the chunk loader, which is right
+# for a global and wrong here; one addon shadowing the name is the price.
+LUA-188 pac3/lua/pac3/core/client/parts/sound.lua
+LUA-008 pac3/lua/pac3/editor/client/language.lua
+LUA-008 pac3/lua/pac3/editor/client/tools.lua
+
+# PAC3 ships a file called test_suite_backdoor.lua which registers a net message
+# that compiles and runs whatever is sent to it. It is their own test for exactly
+# this, and the scanner is meant to shout about it.
+LUA-002 pac3/lua/pac3/core/server/test_suite_backdoor.lua
+LUA-013 pac3/lua/pac3/core/server/test_suite_backdoor.lua
+
+
+# --- false-positive budget ---------------------------------------------------
+#
+# profile <rule> <max findings> <max files>
+#
+# Measured on this corpus, not guessed. Bumping the pinned commits changes
+# these numbers, so regenerate them in the same commit that moves the pins.
+#
+# The CRITICAL lines above and the budgets below answer different questions.
+# Up there: is this specific finding explained. Down here: has any rule started
+# describing ordinary Lua rather than a technique.
+#
+# Two entries are worth naming as weak matches rather than techniques. OBF-001
+# reads a long line with few spaces as packed source; here it catches a Starfall
+# file that localises fifty functions on one line and a PAC3 table of sound
+# paths. BIN-014 reads eighty base64 characters in a row as an embedded blob;
+# here it catches a stretch of a bundled TrueType font. Two findings in 2690
+# files is what these heuristics cost, and the budget is where that cost is
+# written down rather than argued away.
+
+# critical
+profile LUA-002    25  19
+profile LUA-008     7   6
+profile LUA-001     6   5
+profile LUA-121     3   1
+profile COMP-010    1   1
+profile LUA-003     1   1
+profile LUA-188     3   1
+profile LUA-013     1   1
+profile LUA-040     1   1
+profile LUA-044     1   1
+
+# high
+profile LUA-046    19   7
+profile LUA-112    12  11
+profile LUA-021     9   8
+profile LUA-006     7   6
+profile COMP-012    6   6
+profile LUA-041     6   3
+profile LUA-057     6   2
+profile LUA-120     6   4
+profile LUA-185     3   2
+profile LUA-026     2   1
+profile LUA-090     2   1
+profile LUA-181     2   1
+profile OBF-001     2   2
+profile BIN-014     1   1
+profile COMP-005    1   1
+profile LUA-025     1   1
+profile LUA-072     1   1
+profile LUA-103     1   1
+profile LUA-122     1   1
+profile LUA-138     1   1
+
+# medium
+profile LUA-045    48  29
+profile LUA-073    38  10
+profile LUA-114    19  13
+profile LUA-162    16  12
+profile LUA-043    11   3
+profile LUA-153    11   6
+profile LUA-029    10   8
+profile LUA-042     7   4
+profile LUA-139     5   4
+profile LUA-135     3   3
+profile LUA-022     1   1
+profile LUA-032     1   1
+profile LUA-051     1   1
+profile LUA-161     1   1
+
+# low
+profile LUA-113   146  68
+profile LUA-081    39  17
+profile LUA-009    23  12
+profile LUA-100     6   6
+profile LUA-187     1   1

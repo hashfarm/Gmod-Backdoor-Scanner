@@ -1,0 +1,29 @@
+# Patterns for native binaries: .dll, .so and .dylib.
+# Format: regex;;;[SEVERITY] ID Description;;;Optional hint;;;attributes
+#
+# These do not run against the file. They run against the printable strings
+# pulled out of it, one per line, which is all this scanner can honestly do with
+# compiled code. A module that is doing something hostile still has to name the
+# place it talks to, and that name is a string.
+#
+# What is deliberately NOT here: the names of Lua functions. Every Garry's Mod
+# binary module is a Lua binding, so "loadstring" and "RunString" appear in the
+# symbol table of perfectly ordinary modules. The one real sample this was built
+# against contains "loadstring" exactly once, for that reason, and its actual
+# payload was a URL. Network endpoints and hardcoded identities are what separate
+# a hostile module from a normal one.
+#
+# A finding here is not proof. Reading the strings of a binary tells you what it
+# might do, never what it does. Treat it as a reason to get the module verified
+# against its published build, not as a verdict.
+#
+# Every ID has test cases in module_patterns.test.txt.
+
+\bhttps?://[^\s"'<>]{4,}\.lua\b;;;[CRITICAL] MOD-010 Remote Lua Source URL In A Native Module;;;A compiled module that carries the address of a Lua file to fetch. The module is the loader and the real payload is served from somewhere else, which is why nothing incriminating is in the module itself. Follow the URL before doing anything else.;;;tags=remote,execution added=2026-09-16
+\bhttps?://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3};;;[CRITICAL] MOD-011 Bare IP Address URL In A Native Module;;;A numeric address inside a compiled module. A published library names its host; an address with no name behind it is chosen so that it cannot be looked up or taken down.;;;tags=remote,network added=2026-09-16
+\b(?:pastebin\.com|paste\.ee|hastebin\.com|ghostbin\.|bit\.ly|tinyurl\.com|is\.gd|t\.co/);;;[CRITICAL] MOD-012 Paste Site Or Shortener URL In A Native Module;;;A compiled module pointing at a paste site or a shortened link. Both let whoever controls them change what is served after the module has been reviewed.;;;tags=remote,network added=2026-09-16
+\bdiscord(?:app)?\.com/api/webhooks;;;[CRITICAL] MOD-013 Discord Webhook In A Native Module;;;A webhook address inside compiled code. Whatever the module collects has somewhere to go, and the address in the file is where.;;;tags=exfiltration,network added=2026-09-16
+\b(?:zapto\.org|hopto\.org|no-ip\.(?:org|com|biz)|ddns\.net|serveo\.net|ngrok\.io|duckdns\.org|myftp\.biz|servegame\.com);;;[HIGH] MOD-014 Dynamic DNS Hostname In A Native Module;;;A hostname from a free dynamic-DNS service. These exist so that a machine with a changing address can still be reached, which is useful to somebody running a server from home and equally useful to somebody running a control panel from one. A published library does not use one.;;;tags=remote,network added=2026-09-16
+\bSTEAM_[0-5]:[01]:\d{3,};;;[HIGH] MOD-015 Hardcoded SteamID In A Native Module;;;A specific account written into compiled code. Whatever the module treats specially, it treats that account specially, and nobody reading the Lua of this addon would ever see it.;;;tags=privilege added=2026-09-16
+\bhttps?://[^\s"'<>]{6,};;;[MEDIUM] MOD-016 URL In A Native Module;;;A compiled module that names a web address. Many legitimate libraries do, for their homepage or an update check, and the bundled copies of curl and OpenSSL carry plenty of their own. Read which address it is: the severity here is low because the answer is usually boring, and occasionally is not.;;;tags=network added=2026-09-16
+[A-Za-z0-9+/]{400,}={0,2};;;[MEDIUM] MOD-017 Large Encoded Blob In A Native Module;;;Four hundred characters or more of Base64 inside compiled code. Certificates and embedded resources look like this too, so read what it decodes to before drawing a conclusion.;;;tags=obfuscation added=2026-09-16

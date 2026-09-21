@@ -1,0 +1,15 @@
+# The workflows pin third-party actions to a full commit SHA rather than a tag,
+# because a tag can be moved and release.yml runs with contents: write. A pinned
+# SHA that nobody updates is its own problem, so Dependabot opens a pull request
+# when an action publishes a new version, with the new SHA already filled in.
+#
+# Review those pull requests like any other change to the release pipeline: the
+# thing it builds is a binary people download to look for backdoors.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci

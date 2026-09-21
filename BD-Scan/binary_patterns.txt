@@ -1,0 +1,21 @@
+# Patterns for non-Lua asset files (.vmt, .vtf, .ttf).
+# Format: regex;;;[SEVERITY] ID Description;;;Optional hint
+#
+# Lua code has no business being inside a material, texture or font file, so
+# these carry a higher severity than the same construct in a .lua file.
+# Every ID has test cases in binary_patterns.test.txt.
+
+\bRunString(?:Ex)?\s*\(;;;[CRITICAL] BIN-001 Code Execution (RunString);;;Executable Lua inside an asset file. A material or texture never legitimately contains code; this is a payload hidden where nobody looks.;;;tags=execution added=2025-12-03
+\bCompileString\s*\(;;;[CRITICAL] BIN-002 Code Execution (CompileString);;;Executable Lua inside an asset file. There is no legitimate reason for this.;;;tags=execution added=2025-12-03
+\bloadstring\s*\(;;;[CRITICAL] BIN-003 Code Execution (loadstring);;;Executable Lua inside an asset file. There is no legitimate reason for this.;;;tags=execution added=2025-12-03
+\bBroadcastLua\s*\(;;;[CRITICAL] BIN-004 Server Code Broadcast;;;Code meant to run on every client, stored inside an asset file.;;;tags=execution added=2025-12-03
+\bSendLua\s*\(;;;[CRITICAL] BIN-005 Client Code Execution;;;Code meant to run on a client, stored inside an asset file.;;;tags=execution added=2025-12-03
+\bhttp\.Fetch\s*\(;;;[CRITICAL] BIN-006 HTTP Fetch;;;An asset file containing network code. Assets do not make requests; something is using this file as a script.;;;tags=remote,network added=2025-12-03
+\bhttp\.Post\s*\(;;;[CRITICAL] BIN-007 HTTP Post;;;An asset file containing network code, possibly sending data off the server.;;;tags=remote,network added=2025-12-03
+\bdebug\.getregistry;;;[CRITICAL] BIN-008 Debug Registry Access;;;Lua internals being touched from inside an asset file.;;;tags=environment added=2025-12-03
+\bgetfenv\s*\(;;;[CRITICAL] BIN-009 Environment Access;;;Lua internals being touched from inside an asset file.;;;tags=environment added=2025-12-03
+\bsetfenv\s*\(;;;[CRITICAL] BIN-010 Environment Modification;;;Lua internals being touched from inside an asset file.;;;tags=environment added=2025-12-03
+_G\s*\[\s*["'];;;[CRITICAL] BIN-011 Global Table Access;;;Lua global table access from inside an asset file.;;;tags=obfuscation added=2025-12-03
+[0-9]{2,3}(?:,[0-9]{2,3}){6,1000};;;[HIGH] BIN-012 CharCode Sequence (7+ numbers);;;A long run of numbers that decodes to text. The decoded value is shown next to the finding; note that some texture formats legitimately contain numeric data, so read the decoded text before judging.;;;tags=obfuscation added=2025-12-03
+\\x[0-9a-fA-F]{2}\\x[0-9a-fA-F]{2}\\x;;;[HIGH] BIN-013 Multiple Hex Escapes;;;Text written as hex escapes inside an asset file.;;;tags=obfuscation added=2025-12-03
+[A-Za-z0-9+/]{80,8000}={0,2};;;[HIGH] BIN-014 Base64 Encoded Blob;;;A large Base64 blob inside an asset file. Materials and textures do not contain encoded text; this is where a payload gets parked so that a small loader elsewhere can read and execute it. Look for a .lua file calling file.Read on this path.;;;tags=obfuscation added=2025-12-03

@@ -1,0 +1,194 @@
+# Real Garry's Mod backdoors, caught in the wild and published. This file records
+# what the scanner manages against them.
+#
+# The samples are NOT stored in this repository. malicious_corpus.sh clones each
+# source at the commit pinned below and verifies every file against the hashes
+# listed here, so an upstream edit cannot silently change what is being tested.
+# The clone pins core.autocrlf=false, so the hashes are of the bytes as stored
+# rather than whatever the local platform would check out.
+#
+# A family is one backdoor. Its recorded severity is the best the scanner reaches
+# on any of its files: the question is whether the thing would have been stopped,
+# not whether every fragment looks alarming alone. Several families ship a
+# deobfuscated copy made by the analyst next to the original; both are scanned.
+#
+# Not every family is expected to reach CRITICAL, and recording otherwise would be
+# dishonest. A file whose entire content is a hook that blocks kicks is worth
+# knowing about, but it is not a server takeover, and HIGH is the right answer.
+# The floor counts only the families that do reach CRITICAL.
+#
+# One family is recorded as none, and that is a decision rather than a shortfall.
+# The rules look for code that runs at runtime, fetches from somewhere, hides what
+# it does, or digs itself in. A published addon whose author wired a prank into the
+# chat handler does none of those: it is ordinary Lua doing something the server
+# owner did not ask for. A rule that caught it would have to fire on the kind of
+# code every gamemode is made of, and the false positives would cost more than the
+# family is worth. Where a sample is missed for a reason worth fixing, it belongs
+# in lua_patterns.test.txt as a case, not here as an excuse.
+#
+# Lowering any line here, or the floor, is a claim that the scanner got worse.
+# Raising one is the point of the exercise.
+#
+# Deliberately not included: client-side cheat menus. They are malicious, but a
+# server backdoor scanner is the wrong tool for them and counting them would
+# misreport what it does.
+
+# family-recall-floor 23
+
+source bb2015       https://github.com/BannedGithub/Backdoor_Busting_2015 e6df2783cbac9ce95e53b0511aa68eb76358ee32
+source kdrm         https://github.com/Maxime48/kdrm-gmod-backdoor f305627cdd
+source kickblock    https://github.com/Bigmanting24/gmod-backdoor-test 10a53fc87b
+source payloads     https://github.com/SeenKid/gmod_payloads 18ac925cb0
+source scannerkill  https://github.com/YohSambre/gmod_antibackdoor_system_fucker 6a1693cae7
+source cmdremove    https://github.com/YohSambre/gmod_nuc_fuck_rp_resetallmoney_command c22216d96a
+source grobyware    https://github.com/shane7716/Gmod-Backdoor-Menu-Grobyware 881f1ef1fe
+
+# bb2015 -- Labelled database of backdoors found on live servers in 2015 and 2016.
+#   "gpwn" / "pwn" backdoor.
+bb2015/BD001_gpwn_new                        critical
+#   "Underdone" backdoor/DRM annoyance script.
+bb2015/BD002_Underdone                       critical
+#   ThirdPersonController backdoor / Server takeover
+bb2015/BD004_ThirdPersonController           critical
+#   Vorox Goodman backdoor / Server takeover
+bb2015/BD005_Vorox_Goodman                   critical
+#   Pon bootstrap backdoor / Server takeover
+bb2015/BD006_Pon_Bootstrap                   critical
+#   Next_level Bigpayload backdoor / Server takeover
+bb2015/BD007_Next_Level_Bigpayload           critical
+#   Demonic King Leesin Backdoors / Server takeovers
+bb2015/BD008_Demonic_King                    critical
+#   Hammerfist Hammerfall Backdoor
+bb2015/BD009_Hammerfist_Hammerfall           critical
+#   French weapon scripts annoyance
+bb2015/BD010_French_Weapon_Scripts           critical
+#   Truly idiotic backdoor
+bb2015/BD011_IdiotBackdoor                   critical
+#   Another crappy one
+bb2015/BD012_DoorHandler                     critical
+#   Spams the chat and kills players when certain phrases are spoken in the ch
+#   38 lines of plain Lua: a chat hook that prints and kills on a catchphrase.
+#   No execution, no fetch, no obfuscation, nothing to persist. Out of scope on
+#   purpose, see the note at the top.
+bb2015/BD013_CPT_Base                        none
+#   Various files, part of the same addon I think.
+bb2015/BD014_Obfuscated_hud                  critical
+#   Adds concommand "backdoor_ttt" to set the user's group to "superadmin"
+bb2015/BD015_CW2_non_original                critical
+#   Adds concommand "_sv" to RunString any lua code passed to it on the server
+bb2015/BD016_GCap                            critical
+#   Adds concommand "VIA" to set STEAM_0:1:56102047 as admin.
+bb2015/BD017_Crash                           critical
+#   Adds concommand "mememachine" to run remote lua on the server, for the fol
+bb2015/BD018_AfterShock_Gaming               critical
+#   "HTX" or "Hostile Takeover Exploit" backdoor. Includes client and server p
+bb2015/BD019_HTX_Hostile_Takeover_Exploit    critical
+#   Dumbass http.Fetch RunString backdoor
+bb2015/BD020_Dumb                            critical
+#   ShittyScripts backdoor (clientside)
+bb2015/BD021_ShittyScripts                   critical
+
+# kdrm -- Screen capture and player enumeration, 2025.
+kdrm                                         critical
+
+# kickblock -- Blocks the kick and ban events so the operator cannot be removed, 2025.
+kickblock                                    high
+
+# payloads -- Three backdoor payloads, 2023.
+payloads                                     critical
+
+# scannerkill -- Registers the console commands of six known scanners so their scans do nothing, 2024.
+scannerkill                                  critical
+
+# cmdremove -- Removes an admin console command, 2024.
+cmdremove                                    high
+
+# grobyware -- Decrypted backdoor control menu, 2019.
+grobyware                                    critical
+
+# sha256 of every scanned sample, verified before the run.
+sha256 2bf53fc3681ab923e352d29b988f50e8bc498f298c3e61d179920a2416a9824c bb2015/BD001_gpwn_new/1.lua
+sha256 3bc6de160c73a004e2fa7753074c8d6be3b3c14dd584ab9cfc9182ffb7d70038 bb2015/BD001_gpwn_new/1_deobf.lua
+sha256 2951f5c9f0860a58d54038ce0c3a12b9c7107b7aa0022d794853fcf7ad2d4661 bb2015/BD001_gpwn_new/1_nice.lua
+sha256 b7be1dc994b0cede6d37a2a1efb85dee5a634878276795838106f63b1ec4b5fc bb2015/BD001_gpwn_new/1_raw.lua
+sha256 2bf53fc3681ab923e352d29b988f50e8bc498f298c3e61d179920a2416a9824c bb2015/BD001_gpwn_new/2.lua
+sha256 df68580edb3a7faf1710524e7909ccc50bc3c656e257f233d420d2deac571c1f bb2015/BD001_gpwn_new/gpwn backdoor pastebin.lua
+sha256 997252fbd51e81ff92f5b13dc726197b3abbd206bb472c023ebd0159e4f99f46 bb2015/BD001_gpwn_new/gpwn tft 1.lua
+sha256 0ee3a28e4b0b8ae69b4ec41d527620056147f61b7a42a5bf8d20eff43362eab8 bb2015/BD001_gpwn_new/raw real nice.lua
+sha256 4158f388912bdba81303c34c1d6e3c095e597a9d63af253c305ec813b2f8a608 bb2015/BD001_gpwn_new/raw real.lua
+sha256 06de10f882af22921d9bfa71b41384e6ba15427838c178edaeffdd0369f92d35 bb2015/BD001_gpwn_new/raw.lua
+sha256 e17a34dfa9e1d48a2e77cde6a9ae85e6188d2610cda886b7f1a36c7063bd4d5b bb2015/BD001_gpwn_new/raw_deobf.lua
+sha256 12a72af0c14ecf7d5de5232e18a8cbdc35d9d748c26a76901e88f96a53dea90f bb2015/BD001_gpwn_new/strings.lua
+sha256 768bc6bd83062302ba19e397f5c3f20392d17335d779352c3fe251df006d645f bb2015/BD001_gpwn_new/tft.lua
+sha256 a75c03f0dde0aa93cf2b98a4602c349277f3cec699478af0da54ad6574e90f44 bb2015/BD001_gpwn_new/thread.lua
+sha256 e2b9ed71c30338a7c186c3cff16a83643592fa533669d9c2dcbed05de62406fd bb2015/BD001_gpwn_new/winsys.so
+sha256 b900f98ea46ee193c970f20c4d88748e58a0079fd4f085c016cfe0302ccaf1f7 bb2015/BD002_Underdone/troll_code.lua
+sha256 8b28adb438df651e4d35f704f3814e1ace3088294c9e132d59fc7f55b0d4ad38 bb2015/BD004_ThirdPersonController/3rd_tft.lua
+sha256 b927dd0f498578522a3a947ad792f740de910d63626b412891fdf0efa68c8824 bb2015/BD004_ThirdPersonController/autocontentupdater.lua
+sha256 cfece62693c3cd46d5c47501b1e5e6123b7683e0e8a7c717df0f01e3e11fb735 bb2015/BD004_ThirdPersonController/tp_server.lua
+sha256 932c74e16358e00247c1478588d89753922ee02e6fa30b0e5eddd66de89de1a8 bb2015/BD005_Vorox_Goodman/mayordeathdemote.lua
+sha256 0b1cd21c3988100b0dcc9611d3e4f56d39976b8b4178d428b398fd2da06bd20c bb2015/BD005_Vorox_Goodman/sv_purge.lua
+sha256 4c8dd918bc9d683515c9d8757ba65c9bdabb6a93c7d19111cd89aa489872a5aa bb2015/BD005_Vorox_Goodman/sv_voroxwep.lua
+sha256 51dfd50ac0d8bde585f7249ea63ddcce2812e13408d25b0dadb47500655fe476 bb2015/BD006_Pon_Bootstrap/FP/192.99.145.197_api_bootstrap.lua
+sha256 a8866015c85de5342001eec94bf84adc6db30e0a0b1d1b2dcfd35126bfeae0db bb2015/BD006_Pon_Bootstrap/FP/a5c55c4b284eb8ceb72788331a7b2471d66b3d91.lua.lua
+sha256 b2534d9e72917dd1c05f9eb0d37727cf32d28dfe33e591cd7f0c3e5e03b86b54 bb2015/BD006_Pon_Bootstrap/backdoored_pon.lua
+sha256 63ef013f58c6d972aa9a4811b33fdbce4b3d88919f1d6def578c0d5f213d5138 bb2015/BD006_Pon_Bootstrap/bootstrap.lua
+sha256 e4083d5ba079d1d140a9d39b5b4bbfef1d84c6b11a601e46545764827783e8ad bb2015/BD006_Pon_Bootstrap/bootstrap.lua_nice.lua
+sha256 0206e850349cdfcbe7d42dd4c62a6c34d838c1e5e9e20ebec9777e7ad42879e3 bb2015/BD006_Pon_Bootstrap/bootstrap_tft.lua
+sha256 22c2c3296e568e20269e5b899ebced154b5dcfc0cb52c95ffb7db10056f29214 bb2015/BD006_Pon_Bootstrap/plogs a0d0c1933409a0c7207dc4a0d07e4c6fedd943a3.lua
+sha256 05f70721c761a60a89fd48ed3b35812850a8514649c028df19a86adb0532acca bb2015/BD006_Pon_Bootstrap/poop.lua
+sha256 83f80a9bbc7b836bf33916e3610e98ee8059ae7bd4185f3ffa5fd087bdf86d29 bb2015/BD006_Pon_Bootstrap/poop.lua_nice.lua
+sha256 306d651a0af11cfa932ab229062810e93bf9004a171dd4429325e5fd29b2d939 bb2015/BD006_Pon_Bootstrap/tft.lua
+sha256 5b932324704f62dfe5692846dec24511be06eef13fc3d26a9ff3ff103852b416 bb2015/BD006_Pon_Bootstrap/upload_lua rcivluz 36e86ba8d0c23251ef9ca26ee283963ad5918d0e.lua
+sha256 d10de70ae82d6235463590c91e25d2ad6b9751a677cdaf0827ae32818be4dfc3 bb2015/BD007_Next_Level_Bigpayload/D3X_lua-1942862194.lua
+sha256 d37727f5cb1b536315375fa16d7828fad666cfb3d66e1a4e1228bed447413ac5 bb2015/BD007_Next_Level_Bigpayload/next_level_cl.lua
+sha256 7d5579bd280043ab58b443a97cfb3ec9013b521ebc32da0f2b3da7068c153b4f bb2015/BD007_Next_Level_Bigpayload/next_level_sv.lua
+sha256 3f9d9d30de1bd2b097748d807bce96ec35924c94c030ff9ae8c8601c9be0384a bb2015/BD008_Demonic_King/Alien.lua
+sha256 6ddae26150789e43d7bb8d1fdf25b0895844af9b6bb39d476fd24942dae16b0e bb2015/BD008_Demonic_King/Alien_nice.lua
+sha256 bbf878c14ff69b35c8c3dad1aef06a542ea01c4c2994fa14ec24c271a4366b4e bb2015/BD008_Demonic_King/Alien_tft.lua
+sha256 0882ab112163230a7e8b96b8bb87725542951a52b9efd6d54958700d8d6538cd bb2015/BD008_Demonic_King/leesin.lua
+sha256 fefe69e12b2c73100609f3142f768bc369c38c5d82d134c042aec23cfbd78191 bb2015/BD008_Demonic_King/leesin_nice.lua
+sha256 4da6cb7971469829bb789554ff01bff9a0a42f5844aeefe12fecd3b9e6878fa4 bb2015/BD008_Demonic_King/leesin_tft.lua
+sha256 b1fd6d1e5926e8d6be3e25f6b40ef44a61badcdd58682e0300cd256ddc2adca4 bb2015/BD009_Hammerfist_Hammerfall/hammerfall_pickups.lua
+sha256 baad1869fb044accaa015c229a8c01908ccbbaba1038fc1df663c9c85506ac95 bb2015/BD009_Hammerfist_Hammerfall/ids.lua
+sha256 0080a5719eca2ff22ba7f4ac7184b8a2b16cb8c9cdf5f91b0f6177a998214013 bb2015/BD010_French_Weapon_Scripts/weapon_scripts.lua
+sha256 d007b31c0f6686ac152eeb2e626c37c18c42893b15f52f0881feadfb4d6e305a bb2015/BD011_IdiotBackdoor/init_lua-3848060131.lua
+sha256 92c492a9b58832f1d2f718af7d167da5a6a3bad51dd80689d794fa74f5e23bca bb2015/BD012_DoorHandler/door_handler_lua-2481040990.lua
+sha256 b67f4fa7abbfe96023565642a8cf9eb36cae40d78d4ad20b6d8e7a78d1009922 bb2015/BD013_CPT_Base/cpt_base_autorun_lua-2528798886.lua
+sha256 0c9f0f44c663e3a008d20e917af462b78abc122605fa40811603b1e8e658ebd3 bb2015/BD014_Obfuscated_hud/lua/autorun/cl_init_lua-2480128341.lua
+sha256 11bc44e6fd79c9a57e3d12797b68d8a47e49b68138e1bce523d51a292bfce346 bb2015/BD014_Obfuscated_hud/lua/autorun/client/special_menu_lua-2763766796.lua
+sha256 69eef231c6f07e8db9541f937b20fc94709494ac27b16fffa025cb5d55a90e5d bb2015/BD014_Obfuscated_hud/lua/autorun/client/srpnotifications_lua-3766356035.lua
+sha256 dd927726b0881fa75e1bedf470d2983d52cca6ae01b5235df468ef2d02966d53 bb2015/BD014_Obfuscated_hud/lua/autorun/client/wdraw_lua-2994759453.lua
+sha256 0c9f0f44c663e3a008d20e917af462b78abc122605fa40811603b1e8e658ebd3 bb2015/BD014_Obfuscated_hud/lua/autorun/server/darkrp_init_lua-2480128341.lua
+sha256 7e1a3b9f28089ba135a0e2799bd542179b558d870bbbb29cffe69883fd4eae11 bb2015/BD014_Obfuscated_hud/lua/autorun/server/srpnotifications_lua-189158648.lua
+sha256 47bc5a50c26cb5b6d7147714d2b473d8f82d851b0ed5dfdb3f46796b43c2d6e3 bb2015/BD014_Obfuscated_hud/lua/cl_init_lua-4155926611.lua
+sha256 79e32c944d6dbc0492f3c98b5b25688f04d929d6e557abb6dc27e5c5285abb09 bb2015/BD014_Obfuscated_hud/lua/client/shud_lua-4124066278.lua
+sha256 bc720b4cd6469f8183d06497b3d3742799e66d7a8d26f2b5588be3e7ed39fa73 bb2015/BD015_CW2_non_original/cw_init_lua-1115920246.lua
+sha256 2202ebede10e1723183e1f8146384728226e276b2e792625afa07e7bf6b6b8ee bb2015/BD016_GCap/gcap_fixer_lua-1421920571.lua
+sha256 61a4359a5a360b964cf39374d8318d78887a3db7b8fe0305344a581d46b67cb2 bb2015/BD017_Crash/crash_lua-3482258105.lua
+sha256 6e3f38cd278b89856e8d969f2f5e50d442c54ac702b65dcbed794219db13be76 bb2015/BD018_AfterShock_Gaming/mememachine_lua-3806388200.lua
+sha256 ad98da041330b666865e6dfd1be3542c603a9c2d58792d6033c4b15f83302cae bb2015/BD019_HTX_Hostile_Takeover_Exploit/HTX.lua
+sha256 193f1b733da00e2a1aad1b65608ad0fe2c04020111eb6ed07de437e2e35f0aec bb2015/BD019_HTX_Hostile_Takeover_Exploit/HTX_Nice.lua
+sha256 99e2d1834987e367be1f870bbb1dd8845154de7ff35ecac36f8a7fd9b95f0ba1 bb2015/BD019_HTX_Hostile_Takeover_Exploit/htx_client_lol_lua-1523181113.lua
+sha256 13c36e92f670b4359fa5dab3a8bdbaf7f0893cf7d25081608f5975a9d3bf3c00 bb2015/BD019_HTX_Hostile_Takeover_Exploit/htx_client_lua-234222963.lua
+sha256 0e76d12d4c48eae74711dedd6ee335b79464f6eda9279249757c3df5e1b8f9be bb2015/BD019_HTX_Hostile_Takeover_Exploit/htx_server_lua-3139082555.lua
+sha256 7b019b5a55818e15266ee6d2af8c5daa501df57cd9b459230cd8ec605687e6ac bb2015/BD019_HTX_Hostile_Takeover_Exploit/htx_serveredit_lua-3865172368.lua
+sha256 dd0978799bda69070f076e7bf5ebe3a0861b751d39a5eccd9af651ff04c34548 bb2015/BD019_HTX_Hostile_Takeover_Exploit/newhtx_lua-183192179.lua
+sha256 8208e23d616bf91c1a2bd8b148e5de3ec9a8fc01241546c099289512964e2f9d bb2015/BD019_HTX_Hostile_Takeover_Exploit/pHisohtx_lua-3304897348.lua
+sha256 257f535661b66b0813bf6fbc28e7b8150226b985229afbac3f56593cd0fe1050 bb2015/BD020_Dumb/resource_lua-2525028435.lua
+sha256 293d7e602593d31a24af8d55747b968bcab3297019d680f5a232f73224cdc6c0 bb2015/BD021_ShittyScripts/ss_backdoor.lua
+sha256 c712e2e59983d03328d431d21211b5fbb8a2b7cfff3d3d85a1b5a379a43f0f80 bb2015/BD021_ShittyScripts/sscripts.lua
+sha256 f1d13769540962b29c517ac7efd92d47bc7b6c8a74e5c716d3839eafbda4a63e bb2015/BD021_ShittyScripts/test_call.lua
+sha256 6ad021416bfe088d3853e8f01d9cce00358bf6e22c85ee259bbe4da727207109 kdrm/app/Http/Controllers/kermini/special/basic_screen_grab.lua
+sha256 7e713b0da75af8e01c4e7f4790f67ec78b8cc45fb040431995700e3a78fa9c70 kdrm/app/Http/Controllers/kermini/special/playerlist_request.lua
+sha256 c26f3adaecc611789d2520d7e2df9aba1d0c5e2fabf375ee3f3ba10eeeaa65cd kdrm/app/Http/Controllers/kermini/special/scrgb.lua
+sha256 01c79d36f6dfde87080804937262cc93f3907497c825c1d15618cc975dff8297 kickblock/backdoor.lua
+sha256 31f79a89acff3d538fc8bad68b1cd36499e18122a3177d70ac579f43763c2c2c payloads/getnoscope.lua
+sha256 64722bae9c5143b130cce9063f34b21abf8452eba29e1d21a92e18719be1c8b3 payloads/lambda.lua
+sha256 696af67759ff6107c8d99f3a0506f8a540ed84984ff1f8fa9d7c8d10f29fa580 payloads/v1.lua
+sha256 d3ade82981b26f06a2f4416815d4eee65ca05322b514318be5fbdce62d98fac4 scannerkill/ez_antibackdoor/antibackdoorkill/lua/autorun/client/ez.lua
+sha256 d710fc77685275cea249ca4c15ee9aa1d47b80f646a846000fa66abf49a0510c cmdremove/nuc_fuck_rp_resetallmoney_command/lua/autorun/nuc_frpkrmc_sv.lua
+sha256 f0a88f29b45bae78f97ea5692183283327e0ce1ce941bbfe1570b92c554f2327 grobyware/GrobyWare.lua
+sha256 fb994845d718d8875c705389113d30c74985bc71603f3c7004ff0fe564e38a4a grobyware/Hell.lua
+sha256 c98c120ed88313dcfb171105f9f7aae621e94a62ba9fcf89184f433215283ece grobyware/blg.lua
+sha256 b59ca87bc656be8e25a84407bfee49dbf1581fcbcffc63b573dc8931b306f5fe grobyware/mlg.lua

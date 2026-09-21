@@ -1,0 +1,76 @@
+# Composite rules: findings that only mean something in combination.
+#
+# Format: expression;;;[SEVERITY] ID Description;;;Optional hint
+#
+# The expression combines pattern IDs from lua_patterns.txt and
+# binary_patterns.txt, plus HASH-001 and MOD-001:
+#
+#   LUA-001 and LUA-072            both present in the same file
+#   LUA-001 or LUA-002             either present
+#   LUA-020 and not LUA-021        one present, the other absent
+#   atleast(3, LUA-050, LUA-051, LUA-054, LUA-056)
+#                                  at least three of the listed ids present
+#
+# A rule written with a `scan:` prefix is evaluated across files instead of
+# within one, but only across files that belong together: everything under
+# addons/<name> or gamemodes/<name>, everything sharing a parent above a content
+# folder such as lua/ or materials/, and everything inside one GMA archive.
+# Separate addons and separate archives never share evidence, so two unrelated
+# files cannot combine into a finding. Such a rule reports once, listing the
+# files that contributed.
+#
+# Rules are evaluated per file against everything the scanner found there,
+# *before* the severity filter — so a CRITICAL composite still fires when its
+# parts are MEDIUM and -s critical is in effect. That is the point: individually
+# unremarkable findings can be conclusive together.
+#
+# Every rule needs test cases in composite_rules.test.txt.
+
+(LUA-071 or LUA-072) and (LUA-001 or LUA-002 or LUA-003 or LUA-007);;;[CRITICAL] COMP-001 Anonymous Remote Source Plus Code Execution;;;The file both fetches from an anonymous or unaccountable source (a bare IP address, a paste site or a URL shortener) and executes code built at runtime. Either alone is worth a look; together they are the shape of a staged backdoor. Follow the URL and find out what it serves.
+LUA-042 and (LUA-040 or LUA-041 or LUA-043);;;[CRITICAL] COMP-002 Hardcoded SteamID Plus Privilege Grant;;;A specific SteamID is written into the file and the same file grants admin rights or redefines the admin check. In a legitimate owner configuration the ID selects who may use a feature; here it decides who becomes an admin. Check whose ID it is.
+(LUA-052 or LUA-053 or LUA-054 or LUA-055 or LUA-057 or LUA-058 or LUA-059) and (LUA-001 or LUA-002 or LUA-003 or LUA-007 or LUA-028);;;[CRITICAL] COMP-003 Obfuscated Payload Plus Code Execution;;;Encoded or assembled text in the same file as code execution. Obfuscation has no legitimate purpose next to an execution call; the encoding exists to stop someone reading what runs.
+LUA-008 and (LUA-052 or LUA-053 or LUA-054 or LUA-051);;;[CRITICAL] COMP-004 Asset File Read As Encoded Code;;;The file reads another file off disk, executes its contents, and contains encoding or decoding logic. This is the loader half of a backdoor whose payload is parked in an asset file. Look for the matching BIN-014 finding elsewhere in the scan.
+LUA-013 and (LUA-001 or LUA-002) and not LUA-040;;;[HIGH] COMP-005 Network Handler Executing Code Without An Admin Check;;;A net message handler executes code, and nothing in the file grants or checks admin rights. If the handler does not verify the sender, any connected player can run Lua on the server. Read the handler and confirm it checks the caller.
+(LUA-046 or LUA-047) and (LUA-070 or LUA-071 or LUA-072 or LUA-073);;;[CRITICAL] COMP-006 Security Setting Read Plus Outbound Request;;;The file touches a security-relevant convar and also talks to a remote host. Read what is sent: server passwords and RCON credentials leaving the machine is the worst case here.
+atleast(3, LUA-050, LUA-051, LUA-054, LUA-055, LUA-056, LUA-057, LUA-058, LUA-059);;;[HIGH] COMP-007 Layered Obfuscation;;;Three or more different obfuscation techniques in one file. Legitimate code occasionally uses one for a good reason; stacking several is deliberate concealment.
+scan: MOD-001 and (LUA-010 or LUA-071 or LUA-072);;;[CRITICAL] COMP-008 Binary Module Alongside Remote Code Loading;;;A native module that cannot be scanned was found in this addon or archive, and so was code that fetches from a remote or anonymous source. The module has full process access and nothing here can inspect it. Verify it against its published hash or remove it.
+scan: LUA-008 and BIN-014;;;[CRITICAL] COMP-010 Split Loader And Payload;;;One file reads another file off disk and executes it; an asset file in the same addon or archive contains a large encoded blob. That is a backdoor split across two files so that neither looks alarming on its own. Match the path in the loader against the asset file that was flagged.
+LUA-140 and (LUA-001 or LUA-002 or LUA-003 or LUA-010 or LUA-040);;;[CRITICAL] COMP-011 Time-Delayed Activation;;;The file compares the clock against a fixed date and also executes code or grants rights. A payload that stays dormant until after the addon has been installed and reviewed looks exactly like this. Work out what the timestamp corresponds to.
+LUA-112 and LUA-113;;;[HIGH] COMP-012 Mass Hook Removal;;;The file reads the list of every registered hook and removes hooks. Cleaning up your own hooks needs no enumeration; enumerating first is how you find and disable someone else's anticheat or logging. Admin mods such as ULX and ULib do this legitimately, so whitelist them by path rather than turning the rule off.
+(LUA-150 or LUA-151 or LUA-152 or LUA-180) and (LUA-001 or LUA-002 or LUA-003 or LUA-017);;;[CRITICAL] COMP-013 Persistence Plus Code Execution;;;The file both executes code and writes something that survives a restart, whether to disk, to the database or to clients. Removing the addon file will not remove the payload.
+LUA-162 and (LUA-160 or LUA-161 or LUA-070 or LUA-071 or LUA-072);;;[HIGH] COMP-014 Fingerprinting Plus Outbound Traffic;;;The file collects information about the machine or its players and also sends data to a remote host. Confirm what is collected and where it goes.
+LUA-182 and (LUA-150 or LUA-151 or LUA-152 or LUA-180);;;[CRITICAL] COMP-015 Bytecode In A File That Runs At Startup;;;Compiled Lua bytecode sitting in a file that Garry's Mod loads automatically. Bytecode cannot be read, and putting it where it runs without anyone asking is the whole point. There is no legitimate version of this.
+LUA-183 and (LUA-013 or LUA-014 or LUA-012);;;[CRITICAL] COMP-016 Compressed Payload Executed On Demand;;;A compressed blob is decompressed and run, and the file also handles a network message, console command or game event. That is a control channel: the operator sends the trigger, the payload runs.
+LUA-186 and (LUA-001 or LUA-002 or LUA-003 or LUA-007);;;[CRITICAL] COMP-017 Compressed Literal Turned Into Code;;;A compressed string written into the file is decompressed next to code execution. Nothing about the payload is visible by reading the source, which is the reason it was compressed.
+LUA-184 and (LUA-070 or LUA-071 or LUA-072 or LUA-073 or LUA-160 or LUA-161);;;[HIGH] COMP-018 Bytecode Produced Next To Outbound Traffic;;;The file turns functions into bytecode and also talks to a remote address. Serialisation libraries dump bytecode locally; sending it somewhere is a different thing.
+LUA-185 and (LUA-024 or LUA-025 or LUA-112);;;[HIGH] COMP-019 LuaJIT Internals Plus Closure Inspection;;;Reads LuaJIT's own view of compiled functions and also reaches into other addons' closures or hook table. Profilers do the first; rewriting someone else's code from the inside needs both.
+
+# --- COMP-020 global called by a name that was assembled on the spot ---
+LUA-031 and (LUA-032 or LUA-052 or LUA-053 or LUA-054 or LUA-055 or LUA-056 or LUA-057 or LUA-058 or LUA-059);;;[CRITICAL] COMP-020 Global Called By A Name Assembled At Runtime;;;A global is called through a variable key, and the same file builds strings out of pieces, character codes or encoded text. Put together, the file calls a function whose name it deliberately never spells out. That is how RunString is invoked in a file that contains no occurrence of the word. Fold the string construction by hand and see what name comes out.
+
+# --- COMP-021 dynamic dispatch next to an unaccountable remote source ---
+LUA-031 and (LUA-070 or LUA-071 or LUA-072 or LUA-073);;;[CRITICAL] COMP-021 Dynamic Dispatch Plus Anonymous Remote Source;;;The file calls a global chosen at runtime and also talks to a bare IP address, a paste site, a URL shortener or a raw code-hosting URL. The remote end supplies the data; the dynamic call decides what happens with it. Follow the URL before anything else.
+
+# --- COMP-022 the file is shaped like a payload and also runs code ---
+atleast(1, OBF-001, OBF-002, OBF-003, OBF-004, OBF-005) and (LUA-001 or LUA-002 or LUA-003 or LUA-007 or LUA-010 or LUA-028 or LUA-031);;;[CRITICAL] COMP-022 Obfuscated File That Executes Code;;;The shape of the file says it was machine-generated to be unreadable, and it executes code. The structural signals do not depend on recognising the payload, so this fires on payloads no pattern has seen before. Read the OBF finding to see which property triggered it.
+
+# --- COMP-023 machine-generated shape with nothing that explains it ---
+atleast(2, OBF-001, OBF-002, OBF-003, OBF-004, OBF-005);;;[HIGH] COMP-023 Several Signs Of Machine-Generated Source;;;Two or more independent structural signals in one file. One alone has honest explanations: a generated localisation table, a vendored minified library. Two rarely do. Find out what produced the file and why it ships in this form.
+
+# --- COMP-024 a named account is written into the file and handed rights ---
+LUA-042 and (LUA-121 or LUA-122 or LUA-132);;;[CRITICAL] COMP-024 Hardcoded Account Granted Rights Through An Admin Mod;;;A specific SteamID is written into the file and the same file hands out a rank, lifts a ban or widens an admin check. This is what the majority of real Garry's Mod backdoors actually do: no remote code, no obfuscation, just a line that makes one account an admin. Check whose ID it is before anything else.
+
+# --- COMP-025 invisible characters next to anything that runs ---
+OBF-006 and (LUA-001 or LUA-002 or LUA-003 or LUA-007 or LUA-010 or LUA-028 or LUA-031 or LUA-013 or LUA-012);;;[CRITICAL] COMP-025 Invisible Characters In A File That Executes Code;;;The source contains characters that render as nothing or reorder what is displayed, and it executes code. Whatever a reviewer saw when they read this file is not what Lua runs. Open it in a hex editor rather than an editor before judging it.
+
+# --- COMP-026 invisible characters are never the only odd thing ---
+OBF-006 and (OBF-001 or OBF-002 or OBF-003 or OBF-004 or OBF-005);;;[CRITICAL] COMP-026 Invisible Characters Plus Machine-Generated Shape;;;Characters that render as nothing, in a file that is also packed, dense or high-entropy. Invisible characters alone leave a sliver of doubt, an editor accident or a stray mark from a copy and paste. Together with a second sign of machine generation there is none: the file was built to be unreadable. Nothing here needs to match a known payload, so this fires on obfuscators the rules have never seen.
+
+# --- COMP-027 a named list decides who gets hurt ---
+LUA-042 and (LUA-135 or LUA-101 or LUA-102 or LUA-103 or LUA-104);;;[CRITICAL] COMP-027 Hardcoded Accounts Alongside Code That Harms Players;;;Specific SteamIDs are written into the file, and the same file explodes, removes, kicks or bans. The list decides who is spared and who is not. An addon that ships with somebody's personal grudge list is not an addon.
+
+# --- COMP-028 the server cannot get rid of whoever installed this ---
+LUA-136 and (LUA-040 or LUA-121 or LUA-122 or LUA-132 or LUA-042);;;[CRITICAL] COMP-028 Moderation Blocked Alongside A Privilege Grant;;;The file interferes with kicking or banning and also touches who is an admin or names a specific account. Together that is an operator making themselves both powerful and unremovable. Neither half is an accident.
+
+# --- COMP-029 screen capture that leaves the machine ---
+LUA-139 and (LUA-070 or LUA-071 or LUA-072 or LUA-073 or LUA-160 or LUA-161 or LUA-013);;;[CRITICAL] COMP-029 Client Screen Captured And Sent Away;;;The file photographs the player's screen and also talks to a remote host or a network message. An anticheat that does this says so and asks first. Work out who receives the images and whether anyone playing here agreed to it.
